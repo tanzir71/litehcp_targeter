@@ -8,53 +8,145 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
     <style>
-      :root { --fg:#111; --muted:#666; --line:#eaeaea; }
+      :root { --fg:#111; --muted:#666; --line:#eaeaea; --card:#f7f7f7; }
       html, body { height: 100%; }
-      body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--fg); background: #fff; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        color: var(--fg);
+        background: #fff;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
       a { color: var(--fg); text-decoration-thickness: 1px; text-underline-offset: 3px; }
       a:hover { text-decoration-thickness: 2px; }
-      .wrap { max-width: 980px; margin: 0 auto; padding: 40px 20px; }
-      .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-      .brand { font-weight: 700; letter-spacing: -0.02em; }
-      .tag { color: var(--muted); }
-      .rule { height: 1px; background: var(--line); margin: 22px 0; }
-      .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-      @media (min-width: 860px) { .grid { grid-template-columns: 1.2fr 0.8fr; } }
-      .card { border: 1px solid var(--line); padding: 18px; }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 30px 18px 44px; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+      .brand { display: flex; align-items: baseline; gap: 10px; font-weight: 700; letter-spacing: -0.02em; }
+      .brand .mark { font-weight: 800; letter-spacing: -0.06em; }
+      .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; font-size: 12px; color: var(--muted); }
+      .rule { height: 1px; background: var(--line); margin: 18px 0; }
+      .hero { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 16px 0 10px; }
+      @media (min-width: 920px) { .hero { grid-template-columns: 1.35fr 0.65fr; gap: 18px; } }
       .kicker { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
-      .h1 { font-size: 28px; margin: 8px 0 10px; letter-spacing: -0.03em; }
-      .p { margin: 0; color: var(--muted); line-height: 1.6; }
-      .links { list-style: none; padding: 0; margin: 10px 0 0; }
+      .h1 { font-size: clamp(28px, 4.2vw, 48px); margin: 10px 0 8px; letter-spacing: -0.04em; line-height: 1.06; }
+      .lead { margin: 0; color: var(--muted); line-height: 1.7; font-size: 16px; max-width: 62ch; }
+      .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--fg);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .btn.primary { background: var(--fg); color: #fff; border-color: var(--fg); }
+      .btn.ghost { border-color: var(--line); }
+      .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+      .chip { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; font-size: 12px; color: var(--fg); background: #fff; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; }
+      .card { border: 1px solid var(--line); background: #fff; border-radius: 16px; padding: 16px; }
+      .card.soft { background: var(--card); }
+      .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 18px; }
+      @media (min-width: 920px) { .grid { grid-template-columns: 1fr 1fr; gap: 16px; } }
+      .h2 { font-size: 18px; margin: 0 0 10px; letter-spacing: -0.02em; }
+      .p { margin: 0; color: var(--muted); line-height: 1.65; }
+      .split { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+      @media (min-width: 920px) { .split { grid-template-columns: 1fr 1fr; } }
+      .item { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+      .item:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+      .links { list-style: none; padding: 0; margin: 8px 0 0; }
       .links li { padding: 10px 0; border-top: 1px solid var(--line); }
       .links li:first-child { border-top: 0; }
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; }
       .footer { margin-top: 22px; display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 13px; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <div class="top">
-        <div class="brand">LiteHCP Targeter</div>
-        <div class="tag">Portable single-file PHP + SQLite targeting tool</div>
+      <div class="topbar">
+        <div class="brand">
+          <span class="mark">LHT</span>
+          <span>LiteHCP Targeter</span>
+          <span class="pill">v1 <span class="mono">local-first</span> • shared hosting • no cloud required</span>
+        </div>
+        <div class="pill">
+          <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">View repo</a>
+          <span aria-hidden="true">·</span>
+          <a href="#workflow">See workflow</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SETUP.md" target="_blank" rel="noopener">Setup</a>
+        </div>
       </div>
       <div class="rule"></div>
 
-      <div class="grid">
-        <div class="card">
-          <div class="kicker">Overview</div>
-          <div class="h1">Import → enrich → segment → simulate → export</div>
-          <p class="p">
-            LiteHCP Targeter runs as <span class="mono">litehcp.php</span> and stores data in SQLite (WAL mode) for shared hosting.
-            It’s privacy-first by default (exports exclude PII unless enabled by admin).
+      <section class="hero">
+        <div>
+          <div class="kicker">Portable • offline after setup • no cloud required</div>
+          <div class="h1">Local-first HCP targeting tool.</div>
+          <p class="lead">
+            Import CSVs, normalize + impute, enrich with rules, build segments, run a simulator, and export privacy-first lists — all from
+            <span class="mono">litehcp.php</span> + SQLite.
           </p>
-          <div class="rule"></div>
-          <div class="kicker">Run</div>
-          <p class="p">
-            Open <a href="./litehcp.php">litehcp.php</a> to register the first admin and load the sample dataset.
-          </p>
+          <div class="cta">
+            <a class="btn primary" href="./litehcp.php">Open app</a>
+            <a class="btn ghost" href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+            <a class="btn ghost" href="https://github.com/tanzir71/litehcp_targeter/blob/main/README.md" target="_blank" rel="noopener">README</a>
+          </div>
+          <div class="chips" aria-label="tech tags">
+            <span class="chip">PHP 8+</span>
+            <span class="chip">SQLite (WAL)</span>
+            <span class="chip">CSRF</span>
+            <span class="chip">CSP</span>
+            <span class="chip">Rate limiting</span>
+            <span class="chip">Shared hosting</span>
+          </div>
         </div>
+        <div class="card soft">
+          <div class="kicker">Quickstart</div>
+          <div class="item">
+            <div class="h2">1) Upload</div>
+            <p class="p">Drop <span class="mono">litehcp.php</span> (and this <span class="mono">index.html</span>) into <span class="mono">public_html/</span>.</p>
+          </div>
+          <div class="item">
+            <div class="h2">2) Register</div>
+            <p class="p">First user becomes admin. Use <span class="mono">Dashboard → Load sample</span> to seed data.</p>
+          </div>
+          <div class="item">
+            <div class="h2">3) Operate</div>
+            <p class="p">Export defaults to minimal fields (no email) unless admin enables PII export.</p>
+          </div>
+        </div>
+      </section>
 
-        <div class="card">
+      <div class="grid">
+        <section class="card" id="workflow">
+          <div class="kicker">Workflow</div>
+          <div class="h2">Import → enrich → segment → simulate → export</div>
+          <p class="p">All local by default. Optimized for small teams and shared hosting.</p>
+          <div class="split">
+            <div class="card soft">
+              <div class="h2">Import</div>
+              <p class="p">Upload CSV, map columns, choose imputation strategies, import in chunks.</p>
+            </div>
+            <div class="card soft">
+              <div class="h2">Rules enrichment</div>
+              <p class="p">Apply JSON rules to generate persona, priority score, compliance flag, and tags.</p>
+            </div>
+            <div class="card soft">
+              <div class="h2">Segments</div>
+              <p class="p">Build segments from rules or safe SQL-like filters (allowlisted fields only).</p>
+            </div>
+            <div class="card soft">
+              <div class="h2">Simulator + export</div>
+              <p class="p">Project contacts/cost/ROI and export CSV lists (privacy-first by default).</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
           <div class="kicker">Project</div>
           <ul class="links">
             <li><a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub repo</a></li>
@@ -62,11 +154,31 @@
             <li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SETUP.md" target="_blank" rel="noopener">SETUP</a></li>
             <li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY</a></li>
           </ul>
+          <div class="rule"></div>
+          <div class="kicker">Stack</div>
+          <div class="split">
+            <div>
+              <div class="h2">Runtime</div>
+              <p class="p">PHP 8+ (PDO + SQLite)</p>
+            </div>
+            <div>
+              <div class="h2">Data</div>
+              <p class="p">SQLite (WAL mode)</p>
+            </div>
+            <div>
+              <div class="h2">Security</div>
+              <p class="p">CSRF • CSP • rate limiting</p>
+            </div>
+            <div>
+              <div class="h2">Deploy</div>
+              <p class="p">cPanel / Namecheap</p>
+            </div>
+          </div>
           <div class="footer">
-            <div>Minimal B/W Inter (RoughCut)</div>
+            <div>Black &amp; white Inter (RoughCut-inspired)</div>
             <div>tanzir71</div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </body>
