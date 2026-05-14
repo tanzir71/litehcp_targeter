@@ -1,0 +1,5 @@
+.env
+litehcp.db
+litehcp_uploads/
+.DS_Store
+Thumbs.db

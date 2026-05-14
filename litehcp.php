@@ -21,6 +21,7 @@ Customize here
 
 $CONFIG = [
     'appName' => 'LiteHCP Targeter',
+    'repoUrl' => 'https://github.com/tanzir71/litehcp_targeter',
     'dbDsn' => 'sqlite:./litehcp.db',
     'accentColor' => '#1A73E8',
     'locale' => 'en_US',
@@ -68,11 +69,56 @@ $CONFIG = [
     ],
 
     'cronToken' => 'CHANGE_ME',
+    'envPath' => __DIR__ . DIRECTORY_SEPARATOR . '.env',
+
+    'uploadMaxBytes' => 5 * 1024 * 1024,
+    'uploadAllowedExtensions' => ['csv'],
+    'uploadAllowedMimeTypes' => ['text/csv', 'text/plain', 'application/vnd.ms-excel'],
+
+    'logPath' => __DIR__ . DIRECTORY_SEPARATOR . 'litehcp_uploads' . DIRECTORY_SEPARATOR . 'litehcp.log',
+    'errorLogPath' => __DIR__ . DIRECTORY_SEPARATOR . 'litehcp_uploads' . DIRECTORY_SEPARATOR . 'litehcp_error.log',
+
+    'rateLimit' => [
+        'login' => ['windowSeconds' => 15 * 60, 'maxAttempts' => 8, 'blockSeconds' => 15 * 60],
+        'register' => ['windowSeconds' => 60 * 60, 'maxAttempts' => 5, 'blockSeconds' => 60 * 60],
+        'export' => ['windowSeconds' => 10 * 60, 'maxAttempts' => 20, 'blockSeconds' => 10 * 60],
+    ],
 
     'hooks' => [
         'enableExternalEnrichment' => false,
     ],
 ];
+
+function load_env_file(string $path): array {
+    if (!is_file($path)) return [];
+    $lines = @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!is_array($lines)) return [];
+    $env = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) continue;
+        $pos = strpos($line, '=');
+        if ($pos === false) continue;
+        $k = trim(substr($line, 0, $pos));
+        $v = trim(substr($line, $pos + 1));
+        if ($k === '') continue;
+        if ((str_starts_with($v, '"') && str_ends_with($v, '"')) || (str_starts_with($v, "'") && str_ends_with($v, "'"))) {
+            $v = substr($v, 1, -1);
+        }
+        $env[$k] = $v;
+    }
+    return $env;
+}
+
+$ENV = load_env_file($CONFIG['envPath']);
+if ($ENV) {
+    if (isset($ENV['CRON_TOKEN']) && is_string($ENV['CRON_TOKEN']) && $ENV['CRON_TOKEN'] !== '') $CONFIG['cronToken'] = $ENV['CRON_TOKEN'];
+    if (isset($ENV['ACCENT_COLOR']) && is_string($ENV['ACCENT_COLOR']) && preg_match('/^#[0-9a-fA-F]{6}$/', $ENV['ACCENT_COLOR'])) $CONFIG['accentColor'] = $ENV['ACCENT_COLOR'];
+    if (isset($ENV['SESSION_TIMEOUT_SECONDS']) && is_string($ENV['SESSION_TIMEOUT_SECONDS']) && ctype_digit($ENV['SESSION_TIMEOUT_SECONDS'])) $CONFIG['sessionTimeoutSeconds'] = (int)$ENV['SESSION_TIMEOUT_SECONDS'];
+    if (isset($ENV['UPLOAD_MAX_BYTES']) && is_string($ENV['UPLOAD_MAX_BYTES']) && ctype_digit($ENV['UPLOAD_MAX_BYTES'])) $CONFIG['uploadMaxBytes'] = (int)$ENV['UPLOAD_MAX_BYTES'];
+}
+
+$GLOBALS['CONFIG'] = $CONFIG;
 
 /*
 Security notes (admins):
@@ -182,7 +228,125 @@ Helpers
 ====================================================================================================
 */
 
-function h(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+function htmlEscape(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+function h(?string $s): string { return htmlEscape($s); }
+
+function client_ip(): string {
+    $candidates = [
+        $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null,
+        $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+        $_SERVER['REMOTE_ADDR'] ?? null,
+    ];
+    foreach ($candidates as $c) {
+        if (!is_string($c) || trim($c) === '') continue;
+        $parts = array_map('trim', explode(',', $c));
+        $ip = $parts[0] ?? '';
+        if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
+    }
+    return '0.0.0.0';
+}
+
+function sanitize_filename(string $name, string $fallback = 'upload.csv'): string {
+    $base = basename($name);
+    $base = preg_replace('/[^a-zA-Z0-9._-]+/', '_', $base) ?? '';
+    $base = trim($base, " \t\n\r\0\x0B._-");
+    if ($base === '') return $fallback;
+    if (strlen($base) > 180) $base = substr($base, -180);
+    return $base;
+}
+
+function log_line(array $CONFIG, string $level, string $message, array $context = []): void {
+    $dir = __DIR__ . DIRECTORY_SEPARATOR . 'litehcp_uploads';
+    if (!is_dir($dir)) @mkdir($dir, 0750, true);
+    $ht = $dir . DIRECTORY_SEPARATOR . '.htaccess';
+    if (!file_exists($ht)) @file_put_contents($ht, "Deny from all\n");
+    $line = json_encode_safe([
+        'ts' => time(),
+        'level' => $level,
+        'ip' => client_ip(),
+        'msg' => $message,
+        'ctx' => $context,
+    ]) . "\n";
+    @file_put_contents((string)$CONFIG['logPath'], $line, FILE_APPEND | LOCK_EX);
+}
+
+function error_line(array $CONFIG, string $message, array $context = []): void {
+    $dir = __DIR__ . DIRECTORY_SEPARATOR . 'litehcp_uploads';
+    if (!is_dir($dir)) @mkdir($dir, 0750, true);
+    $ht = $dir . DIRECTORY_SEPARATOR . '.htaccess';
+    if (!file_exists($ht)) @file_put_contents($ht, "Deny from all\n");
+    $line = json_encode_safe([
+        'ts' => time(),
+        'level' => 'error',
+        'ip' => client_ip(),
+        'msg' => $message,
+        'ctx' => $context,
+    ]) . "\n";
+    @file_put_contents((string)$CONFIG['errorLogPath'], $line, FILE_APPEND | LOCK_EX);
+}
+
+function send_security_headers(array $CONFIG, string $nonce): void {
+    if (php_sapi_name() === 'cli') return;
+    if (headers_sent()) return;
+
+    header('X-Frame-Options: DENY');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+
+    // CSP customization: if you host assets locally, remove the external domains (fonts.googleapis.com, fonts.gstatic.com, cdn.jsdelivr.net).
+    $csp = implode('; ', [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "img-src 'self' data:",
+        "font-src 'self' https://fonts.gstatic.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+        "script-src 'self' https://cdn.jsdelivr.net 'nonce-{$nonce}'",
+        "connect-src 'self'",
+        "form-action 'self'",
+        "upgrade-insecure-requests",
+    ]);
+    header('Content-Security-Policy: ' . $csp);
+}
+
+$GLOBALS['CSP_NONCE'] = base64_encode(random_bytes(16));
+send_security_headers($CONFIG, (string)$GLOBALS['CSP_NONCE']);
+
+set_error_handler(function (int $severity, string $message, string $file, int $line) {
+    if (!(error_reporting() & $severity)) return false;
+    $id = bin2hex(random_bytes(6));
+    error_line($GLOBALS['CONFIG'], 'php_error', ['id' => $id, 'severity' => $severity, 'message' => $message, 'file' => $file, 'line' => $line]);
+    if (php_sapi_name() === 'cli') {
+        fwrite(STDERR, "Error {$id}\n");
+        return false;
+    }
+    http_response_code(500);
+    echo 'Server error (' . htmlEscape($id) . ')';
+    exit;
+});
+
+set_exception_handler(function (Throwable $e) {
+    $id = bin2hex(random_bytes(6));
+    error_line($GLOBALS['CONFIG'], 'uncaught_exception', ['id' => $id, 'type' => get_class($e), 'message' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
+    if (php_sapi_name() === 'cli') {
+        fwrite(STDERR, "Exception {$id}: {$e->getMessage()}\n");
+        exit(1);
+    }
+    http_response_code(500);
+    echo 'Server error (' . htmlEscape($id) . ')';
+    exit;
+});
+
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if (!is_array($e)) return;
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR];
+    if (!in_array((int)($e['type'] ?? 0), $fatalTypes, true)) return;
+    $id = bin2hex(random_bytes(6));
+    error_line($GLOBALS['CONFIG'], 'fatal_error', ['id' => $id, 'error' => $e]);
+});
 
 function flash(string $type, string $message): void { $_SESSION['__flash'][] = ['type' => $type, 'message' => $message]; }
 
@@ -208,6 +372,70 @@ function current_user(): ?array { return isset($_SESSION['user']) && is_array($_
 function is_admin(): bool { $u = current_user(); return $u && ($u['role'] ?? '') === 'admin'; }
 function require_login(): void { if (!current_user()) redirect('?action=login'); }
 function require_admin(): void { require_login(); if (!is_admin()) { http_response_code(403); echo 'Forbidden'; exit; } }
+
+function rate_limit_assert(PDO $pdo, array $CONFIG, string $action, string $identifier = ''): void {
+    $ip = client_ip();
+    $conf = $CONFIG['rateLimit'][$action] ?? null;
+    if (!is_array($conf)) return;
+    $now = time();
+    $stmt = $pdo->prepare('SELECT window_start, attempts, blocked_until FROM rate_limits WHERE ip = :ip AND action = :a AND identifier = :i');
+    $stmt->execute([':ip' => $ip, ':a' => $action, ':i' => $identifier]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        $pdo->prepare('INSERT OR IGNORE INTO rate_limits (ip, action, identifier, window_start, attempts, blocked_until) VALUES (:ip,:a,:i,:ws,0,0)')
+            ->execute([':ip' => $ip, ':a' => $action, ':i' => $identifier, ':ws' => $now]);
+        return;
+    }
+    $blockedUntil = (int)($row['blocked_until'] ?? 0);
+    if ($blockedUntil > $now) {
+        $retry = $blockedUntil - $now;
+        header('Retry-After: ' . $retry);
+        http_response_code(429);
+        echo 'Too Many Requests';
+        exit;
+    }
+    $windowStart = (int)($row['window_start'] ?? 0);
+    $window = (int)($conf['windowSeconds'] ?? 900);
+    if ($windowStart <= 0 || ($now - $windowStart) > $window) {
+        $pdo->prepare('UPDATE rate_limits SET window_start = :ws, attempts = 0, blocked_until = 0 WHERE ip = :ip AND action = :a AND identifier = :i')
+            ->execute([':ws' => $now, ':ip' => $ip, ':a' => $action, ':i' => $identifier]);
+    }
+}
+
+function rate_limit_fail(PDO $pdo, array $CONFIG, string $action, string $identifier = ''): void {
+    $ip = client_ip();
+    $conf = $CONFIG['rateLimit'][$action] ?? null;
+    if (!is_array($conf)) return;
+    $now = time();
+    $max = (int)($conf['maxAttempts'] ?? 10);
+    $blockSeconds = (int)($conf['blockSeconds'] ?? 900);
+
+    $stmt = $pdo->prepare('SELECT window_start, attempts FROM rate_limits WHERE ip = :ip AND action = :a AND identifier = :i');
+    $stmt->execute([':ip' => $ip, ':a' => $action, ':i' => $identifier]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        $pdo->prepare('INSERT INTO rate_limits (ip, action, identifier, window_start, attempts, blocked_until) VALUES (:ip,:a,:i,:ws,1,0)')
+            ->execute([':ip' => $ip, ':a' => $action, ':i' => $identifier, ':ws' => $now]);
+        return;
+    }
+    $attempts = (int)($row['attempts'] ?? 0) + 1;
+    $blockedUntil = 0;
+    if ($attempts >= $max) {
+        $blockedUntil = $now + $blockSeconds;
+    }
+    $pdo->prepare('UPDATE rate_limits SET attempts = :n, blocked_until = :b WHERE ip = :ip AND action = :a AND identifier = :i')
+        ->execute([':n' => $attempts, ':b' => $blockedUntil, ':ip' => $ip, ':a' => $action, ':i' => $identifier]);
+}
+
+function rate_limit_hit(PDO $pdo, array $CONFIG, string $action, string $identifier = ''): void {
+    rate_limit_fail($pdo, $CONFIG, $action, $identifier);
+}
+
+function rate_limit_clear(PDO $pdo, string $action, string $identifier = ''): void {
+    $ip = client_ip();
+    $pdo->prepare('DELETE FROM rate_limits WHERE ip = :ip AND action = :a AND identifier = :i')
+        ->execute([':ip' => $ip, ':a' => $action, ':i' => $identifier]);
+}
 
 function parse_boolish($v): int {
     if (is_bool($v)) return $v ? 1 : 0;
@@ -284,6 +512,16 @@ function ensure_schema(PDO $pdo): void {
     $pdo->exec('CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, action TEXT NOT NULL, payload TEXT NOT NULL DEFAULT "{}", ts INTEGER NOT NULL);');
     $pdo->exec('CREATE TABLE IF NOT EXISTS imports (id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT NOT NULL, rows_total INTEGER NOT NULL DEFAULT 0, rows_imported INTEGER NOT NULL DEFAULT 0, errors_json TEXT NOT NULL DEFAULT "{}", created_at INTEGER NOT NULL);');
     $pdo->exec('CREATE TABLE IF NOT EXISTS app_settings (id INTEGER PRIMARY KEY CHECK (id = 1), json TEXT NOT NULL);');
+    $pdo->exec('CREATE TABLE IF NOT EXISTS rate_limits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT NOT NULL,
+        action TEXT NOT NULL,
+        identifier TEXT NOT NULL DEFAULT "",
+        window_start INTEGER NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        blocked_until INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(ip, action, identifier)
+    );');
 
     $row = $pdo->query('SELECT COUNT(*) c FROM app_settings WHERE id = 1')->fetch();
     if ((int)($row['c'] ?? 0) === 0) {
@@ -311,6 +549,8 @@ function ensure_upload_dir(): string {
     if (!is_dir($dir)) @mkdir($dir, 0750, true);
     $ht = $dir . DIRECTORY_SEPARATOR . '.htaccess';
     if (!file_exists($ht)) @file_put_contents($ht, "Deny from all\n");
+    $idx = $dir . DIRECTORY_SEPARATOR . 'index.html';
+    if (!file_exists($idx)) @file_put_contents($idx, "<!doctype html><meta charset=\"utf-8\"><title>Forbidden</title>Forbidden\n");
     return $dir;
 }
 
@@ -385,9 +625,17 @@ function page_header(string $title, array $CONFIG, array $settings, ?array $user
 }
 
 function page_footer(): void {
+    $repo = (string)($GLOBALS['CONFIG']['repoUrl'] ?? 'https://github.com/tanzir71/litehcp_targeter');
+    $setup = $repo . '/blob/main/SETUP.md';
+    $sec = $repo . '/blob/main/SECURITY.md';
+    echo "<footer class=\"pt-4 pb-3 border-top mt-4\"><div class=\"d-flex flex-wrap justify-content-between align-items-center\">";
+    echo "<div class=\"small muted\">Docs: <a class=\"link-dark\" href=\"" . h($setup) . "\" target=\"_blank\" rel=\"noopener\">SETUP</a> · <a class=\"link-dark\" href=\"" . h($sec) . "\" target=\"_blank\" rel=\"noopener\">SECURITY</a></div>";
+    echo "<div class=\"small muted\"><a class=\"link-dark\" href=\"" . h($repo) . "\" target=\"_blank\" rel=\"noopener\">GitHub</a></div>";
+    echo "</div></footer>";
     echo "</main>";
     echo "<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>";
-    echo "<script>document.querySelectorAll('.toast').forEach(t=>{try{new bootstrap.Toast(t,{delay:4500}).show()}catch(e){}})</script>";
+    $nonce = (string)($GLOBALS['CSP_NONCE'] ?? '');
+    echo "<script nonce=\"" . h($nonce) . "\">document.querySelectorAll('.toast').forEach(t=>{try{new bootstrap.Toast(t,{delay:4500}).show()}catch(e){}})</script>";
     echo "</body></html>";
 }
 
@@ -767,16 +1015,22 @@ function handle_login(PDO $pdo): void {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = strtolower(trim((string)($_POST['email'] ?? '')));
         $pass = (string)($_POST['password'] ?? '');
+        rate_limit_assert($pdo, $GLOBALS['CONFIG'], 'login', '');
+        rate_limit_assert($pdo, $GLOBALS['CONFIG'], 'login', $email);
         $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :e');
         $stmt->execute([':e' => $email]);
         $u = $stmt->fetch();
         if ($u && password_verify($pass, (string)$u['password_hash'])) {
             session_regenerate_id(true);
             $_SESSION['user'] = ['id' => (int)$u['id'], 'email' => (string)$u['email'], 'role' => (string)$u['role']];
+            rate_limit_clear($pdo, 'login', '');
+            rate_limit_clear($pdo, 'login', $email);
             audit($pdo, (int)$u['id'], 'auth_login', ['email' => $email]);
             flash('success', 'Logged in.');
             redirect('?action=dashboard');
         }
+        rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'login', '');
+        rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'login', $email);
         audit($pdo, null, 'auth_login_failed', ['email' => $email]);
         flash('danger', 'Invalid email or password.');
         redirect('?action=login');
@@ -816,11 +1070,17 @@ function handle_register(PDO $pdo, array $CONFIG, array $settings): void {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = strtolower(trim((string)($_POST['email'] ?? '')));
         $pass = (string)($_POST['password'] ?? '');
+        rate_limit_assert($pdo, $GLOBALS['CONFIG'], 'register', '');
+        rate_limit_assert($pdo, $GLOBALS['CONFIG'], 'register', $email);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'register', '');
+            rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'register', $email);
             flash('danger', 'Enter a valid email.');
             redirect('?action=register');
         }
         if (strlen($pass) < 10) {
+            rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'register', '');
+            rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'register', $email);
             flash('danger', 'Use a password of at least 10 characters.');
             redirect('?action=register');
         }
@@ -830,11 +1090,16 @@ function handle_register(PDO $pdo, array $CONFIG, array $settings): void {
             $pdo->prepare('INSERT INTO users (email, password_hash, role, created_at) VALUES (:e,:p,:r,:t)')
                 ->execute([':e' => $email, ':p' => $hash, ':r' => $role, ':t' => time()]);
             $uid = (int)$pdo->lastInsertId();
+            session_regenerate_id(true);
             $_SESSION['user'] = ['id' => $uid, 'email' => $email, 'role' => $role];
+            rate_limit_clear($pdo, 'register', '');
+            rate_limit_clear($pdo, 'register', $email);
             audit($pdo, $uid, 'auth_register', ['email' => $email, 'role' => $role]);
             flash('success', $role === 'admin' ? 'Admin account created.' : 'Account created.');
             redirect('?action=dashboard');
         } catch (Throwable $e) {
+            rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'register', '');
+            rate_limit_fail($pdo, $GLOBALS['CONFIG'], 'register', $email);
             flash('danger', 'Registration failed (email may already exist).');
             redirect('?action=register');
         }
@@ -921,12 +1186,41 @@ function page_import(PDO $pdo, array $CONFIG, array $settings): void {
     page_header('Import', $CONFIG, $settings, $u);
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!isset($_FILES['csv']) || !is_uploaded_file($_FILES['csv']['tmp_name'])) {
+        if (!isset($_FILES['csv']) || !is_array($_FILES['csv'])) {
             flash('danger', 'Upload a CSV file.');
             redirect('?action=import');
         }
-        $name = (string)($_FILES['csv']['name'] ?? 'upload.csv');
+        if ((int)($_FILES['csv']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            flash('danger', 'Upload failed.');
+            redirect('?action=import');
+        }
         $tmp = (string)($_FILES['csv']['tmp_name'] ?? '');
+        if ($tmp === '' || !is_uploaded_file($tmp)) {
+            flash('danger', 'Upload failed.');
+            redirect('?action=import');
+        }
+        $size = (int)($_FILES['csv']['size'] ?? 0);
+        if ($size <= 0 || $size > (int)$CONFIG['uploadMaxBytes']) {
+            flash('danger', 'File too large.');
+            redirect('?action=import');
+        }
+        $name = sanitize_filename((string)($_FILES['csv']['name'] ?? 'upload.csv'), 'upload.csv');
+        $ext = strtolower((string)pathinfo($name, PATHINFO_EXTENSION));
+        if (!in_array($ext, (array)$CONFIG['uploadAllowedExtensions'], true)) {
+            flash('danger', 'Invalid file type.');
+            redirect('?action=import');
+        }
+        if (function_exists('finfo_open')) {
+            $fi = finfo_open(FILEINFO_MIME_TYPE);
+            if ($fi) {
+                $mime = finfo_file($fi, $tmp) ?: '';
+                finfo_close($fi);
+                if ($mime !== '' && !in_array($mime, (array)$CONFIG['uploadAllowedMimeTypes'], true)) {
+                    flash('danger', 'Invalid file type.');
+                    redirect('?action=import');
+                }
+            }
+        }
         $dir = ensure_upload_dir();
         $pdo->prepare('INSERT INTO imports (filename, rows_total, rows_imported, errors_json, created_at) VALUES (:f,0,0,:e,:t)')
             ->execute([':f' => $name, ':e' => json_encode_safe([]), ':t' => time()]);
@@ -1206,7 +1500,9 @@ function page_import_run(PDO $pdo, array $CONFIG, array $settings): void {
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             fclose($fh);
-            $errors[] = ['row' => $already + $processedThisRequest, 'error' => 'Import aborted: ' . $e->getMessage()];
+            $errId = bin2hex(random_bytes(6));
+            error_line($CONFIG, 'import_failed', ['id' => $errId, 'import_id' => $id, 'message' => $e->getMessage()]);
+            $errors[] = ['row' => $already + $processedThisRequest, 'error' => 'Import aborted (error ' . $errId . ')'];
             $errorsObj['import_errors'] = $errors;
             $pdo->prepare('UPDATE imports SET errors_json = :e WHERE id = :id')->execute([':e' => json_encode_safe($errorsObj), ':id' => $id]);
             audit($pdo, (int)$u['id'], 'import_failed', ['import_id' => $id]);
@@ -1501,10 +1797,12 @@ function validate_sql_filter(string $where, array $allowedFields): array {
     if ($trim === '') return [false, 'Filter is empty'];
     if (strpos($trim, ';') !== false) return [false, 'Semicolons are not allowed'];
     if (preg_match('/--|\/\*|\*\//', $trim)) return [false, 'SQL comments are not allowed'];
+    if (strpos($trim, '"') !== false) return [false, 'Double quotes are not allowed'];
     if (preg_match('/\b(attach|detach|pragma|vacuum|insert|update|delete|drop|alter|create)\b/i', $trim)) {
         return [false, 'Only WHERE-like filters are allowed'];
     }
-    preg_match_all('/\b[a-zA-Z_][a-zA-Z0-9_]*\b/', $trim, $m);
+    $scan = preg_replace("/'([^']|'')*'/", "''", $trim) ?? $trim;
+    preg_match_all('/\b[a-zA-Z_][a-zA-Z0-9_]*\b/', $scan, $m);
     $idents = $m[0] ?? [];
     $keywords = ['and','or','not','like','in','is','null','between','exists','true','false'];
     foreach ($idents as $id) {
@@ -1791,7 +2089,8 @@ function page_segments(PDO $pdo, array $CONFIG, array $settings): void {
     }
     echo "</div>";
     echo "<div class=\"mt-3\"><button class=\"btn btn-primary\" type=\"submit\">Create</button></div></form>";
-    echo "<script>
+    $nonce = (string)($GLOBALS['CSP_NONCE'] ?? '');
+    echo "<script nonce=\"" . h($nonce) . "\">
         const segType = document.getElementById('segType');
         const sqlWrap = document.getElementById('segSqlWrap');
         const rulesWrap = document.getElementById('segRulesWrap');
@@ -1835,7 +2134,9 @@ function page_segment_run(PDO $pdo, array $CONFIG, array $settings): void {
     try {
         $where = build_segment_where($pdo, $segment, $mode, $threshold, $params);
     } catch (Throwable $e) {
-        flash('danger', 'Segment filter invalid: ' . $e->getMessage());
+        $errId = bin2hex(random_bytes(6));
+        error_line($CONFIG, 'segment_filter_invalid', ['id' => $errId, 'segment_id' => $id, 'message' => $e->getMessage()]);
+        flash('danger', 'Segment filter invalid (error ' . $errId . ').');
         redirect('?action=segments');
     }
 
@@ -1859,10 +2160,14 @@ function page_segment_run(PDO $pdo, array $CONFIG, array $settings): void {
     echo "<a class=\"btn btn-sm " . ($mode==='inclusive'?'btn-primary':'btn-outline-dark') . "\" href=\"?action=segment_run&id={$id}&mode=inclusive\">Inclusive</a>";
     if ($mode === 'strict') echo " <span class=\"small muted\">(requires confidence_score ≥ " . h((string)$threshold) . ")</span>";
     echo "</div>";
-    echo "<div class=\"mt-3 d-flex gap-2\">";
-    echo "<a class=\"btn btn-outline-dark\" href=\"?action=export_segment&id={$id}&mode={$mode}\">Export (minimal)</a>";
+    echo "<div class=\"mt-3 d-flex flex-wrap gap-2\">";
+    echo "<form method=\"post\" action=\"?action=export_segment\" class=\"m-0\">" . csrf_field();
+    echo "<input type=\"hidden\" name=\"id\" value=\"" . h((string)$id) . "\"><input type=\"hidden\" name=\"mode\" value=\"" . h($mode) . "\">";
+    echo "<button class=\"btn btn-outline-dark\" type=\"submit\">Export (minimal)</button></form>";
     if (is_admin() && (bool)($settings['export_pii'] ?? false)) {
-        echo "<a class=\"btn btn-outline-dark\" href=\"?action=export_segment&id={$id}&mode={$mode}&include_pii=1\">Export (include email)</a>";
+        echo "<form method=\"post\" action=\"?action=export_segment\" class=\"m-0\">" . csrf_field();
+        echo "<input type=\"hidden\" name=\"id\" value=\"" . h((string)$id) . "\"><input type=\"hidden\" name=\"mode\" value=\"" . h($mode) . "\"><input type=\"hidden\" name=\"include_pii\" value=\"1\">";
+        echo "<button class=\"btn btn-outline-dark\" type=\"submit\">Export (include email)</button></form>";
     }
     echo "</div></div>";
 
@@ -1978,10 +2283,16 @@ function page_simulator(PDO $pdo, array $CONFIG, array $settings): void {
 
 function handle_export_segment(PDO $pdo, array $CONFIG, array $settings): void {
     $u = current_user();
-    $id = (int)($_GET['id'] ?? 0);
-    $mode = (string)($_GET['mode'] ?? 'strict');
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo 'Method Not Allowed';
+        return;
+    }
+    $id = (int)($_POST['id'] ?? 0);
+    $mode = (string)($_POST['mode'] ?? 'strict');
     if (!in_array($mode, ['strict','inclusive'], true)) $mode = 'strict';
-    $includePii = (int)($_GET['include_pii'] ?? 0) === 1;
+    $includePii = (int)($_POST['include_pii'] ?? 0) === 1;
+    rate_limit_assert($pdo, $CONFIG, 'export', '');
 
     $stmt = $pdo->prepare('SELECT * FROM segments WHERE id = :id');
     $stmt->execute([':id' => $id]);
@@ -2013,6 +2324,7 @@ function handle_export_segment(PDO $pdo, array $CONFIG, array $settings): void {
     $pdo->prepare('INSERT INTO exports (segment_id, filename, created_at) VALUES (:sid,:fn,:t)')
         ->execute([':sid' => $id, ':fn' => $filename, ':t' => time()]);
     audit($pdo, (int)$u['id'], 'export_created', ['segment_id' => $id, 'filename' => $filename, 'include_pii' => $includePii, 'fields' => $fields, 'mode' => $mode]);
+    rate_limit_hit($pdo, $CONFIG, 'export', '');
 
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');

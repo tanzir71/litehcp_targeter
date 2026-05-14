@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LiteHCP Targeter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root { --fg:#111; --muted:#666; --line:#eaeaea; }
+      html, body { height: 100%; }
+      body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--fg); background: #fff; }
+      a { color: var(--fg); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+      a:hover { text-decoration-thickness: 2px; }
+      .wrap { max-width: 980px; margin: 0 auto; padding: 40px 20px; }
+      .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+      .brand { font-weight: 700; letter-spacing: -0.02em; }
+      .tag { color: var(--muted); }
+      .rule { height: 1px; background: var(--line); margin: 22px 0; }
+      .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+      @media (min-width: 860px) { .grid { grid-template-columns: 1.2fr 0.8fr; } }
+      .card { border: 1px solid var(--line); padding: 18px; }
+      .kicker { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+      .h1 { font-size: 28px; margin: 8px 0 10px; letter-spacing: -0.03em; }
+      .p { margin: 0; color: var(--muted); line-height: 1.6; }
+      .links { list-style: none; padding: 0; margin: 10px 0 0; }
+      .links li { padding: 10px 0; border-top: 1px solid var(--line); }
+      .links li:first-child { border-top: 0; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; }
+      .footer { margin-top: 22px; display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">LiteHCP Targeter</div>
+        <div class="tag">Portable single-file PHP + SQLite targeting tool</div>
+      </div>
+      <div class="rule"></div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="kicker">Overview</div>
+          <div class="h1">Import → enrich → segment → simulate → export</div>
+          <p class="p">
+            LiteHCP Targeter runs as <span class="mono">litehcp.php</span> and stores data in SQLite (WAL mode) for shared hosting.
+            It’s privacy-first by default (exports exclude PII unless enabled by admin).
+          </p>
+          <div class="rule"></div>
+          <div class="kicker">Run</div>
+          <p class="p">
+            Open <a href="./litehcp.php">litehcp.php</a> to register the first admin and load the sample dataset.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="kicker">Project</div>
+          <ul class="links">
+            <li><a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub repo</a></li>
+            <li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/README.md" target="_blank" rel="noopener">README</a></li>
+            <li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SETUP.md" target="_blank" rel="noopener">SETUP</a></li>
+            <li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY</a></li>
+          </ul>
+          <div class="footer">
+            <div>Minimal B/W Inter (RoughCut)</div>
+            <div>tanzir71</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
