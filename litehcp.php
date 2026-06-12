@@ -153,7 +153,8 @@ function sample_csv(): string {
     $rolePool = ['Physician','Physician','Physician','Physician','Physician','Physician','Nurse','Nurse','Nurse Practitioner','Physician Assistant','Pharmacist'];
 
     $now = time();
-    $out = "hcp_id,name,email,specialty,region,organization,role,consent_email,consent_web,last_activity_ts,imports_count\n";
+    // kol_score is intentionally NOT an internal field: it demonstrates custom-field import.
+    $out = "hcp_id,name,email,specialty,region,organization,role,consent_email,consent_web,last_activity_ts,imports_count,kol_score\n";
 
     for ($i = 0; $i < 200; $i++) {
         $fn = $firstNames[$rand(count($firstNames))];
@@ -182,7 +183,10 @@ function sample_csv(): string {
         // Engagement loosely correlated with consent.
         $imports = 1 + $rand(4) + (($consentEmail && $consentWeb) ? $rand(5) : 0);
 
-        $out .= 'HCP-' . (1001 + $i) . ",{$name},{$email},{$specialty},{$region},{$org},{$role},{$consentEmail},{$consentWeb},{$lastActivity},{$imports}\n";
+        // Custom field demo: key-opinion-leader score, skewed low with a high tail.
+        $kol = max($rand(101), $rand(101) > 79 ? $rand(101) : 0);
+
+        $out .= 'HCP-' . (1001 + $i) . ",{$name},{$email},{$specialty},{$region},{$org},{$role},{$consentEmail},{$consentWeb},{$lastActivity},{$imports},{$kol}\n";
     }
     return $out;
 }
@@ -275,6 +279,22 @@ function sample_rules(): array {
             ],
         ],
         [
+            // Demonstrates rules over CUSTOM fields (kol_score arrives via custom-field import).
+            'name' => 'KOL score 80+ (custom field) => boost',
+            'priority' => 70,
+            'conditions' => [
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'custom.kol_score', 'op' => '>=', 'value' => 80],
+                ],
+                'continue_on_match' => true,
+            ],
+            'actions' => [
+                'add_priority_delta' => 10,
+                'add_tags' => ['kol'],
+            ],
+        ],
+        [
             'name' => 'Web-only consent => Web Reachable',
             'priority' => 60,
             'conditions' => [
@@ -348,6 +368,11 @@ const SAMPLE_SEGMENTS = [
         'name' => 'Suppression list (Do Not Contact)',
         'rule_ids' => [],
         'sql_filter' => "persona = 'Do Not Contact'",
+    ],
+    [
+        'name' => 'Key opinion leaders (custom field)',
+        'rule_ids' => [],
+        'sql_filter' => 'custom.kol_score >= 80',
     ],
 ];
 
@@ -1020,6 +1045,17 @@ function get_field_value(array $profile, string $field) {
         $m = json_decode_safe($profile['metadata'] ?? '{}');
         return $m['tags'] ?? [];
     }
+    // Custom fields: explicit "custom.X", with bare-name fallback for unknown fields.
+    if (str_starts_with($field, 'custom.')) {
+        $m = json_decode_safe($profile['metadata'] ?? '{}');
+        return $m['custom'][substr($field, 7)] ?? null;
+    }
+    if (!array_key_exists($field, $profile)) {
+        $m = json_decode_safe($profile['metadata'] ?? '{}');
+        if (isset($m['custom']) && is_array($m['custom']) && array_key_exists($field, $m['custom'])) {
+            return $m['custom'][$field];
+        }
+    }
     return $profile[$field] ?? null;
 }
 
@@ -1567,6 +1603,7 @@ function page_import_map(PDO $pdo, array $CONFIG, array $settings): void {
     $errorsObj = json_decode_safe((string)($import['errors_json'] ?? '{}'));
     $savedMapping = is_array($errorsObj['mapping'] ?? null) ? $errorsObj['mapping'] : [];
     $savedImpute = is_array($errorsObj['impute'] ?? null) ? $errorsObj['impute'] : [];
+    $savedCustom = is_array($errorsObj['custom_map'] ?? null) ? $errorsObj['custom_map'] : [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mapping = [];
@@ -1588,12 +1625,27 @@ function page_import_map(PDO $pdo, array $CONFIG, array $settings): void {
             $impute[$key] = ['strategy' => $strategy, 'value' => $val];
         }
 
+        // Custom fields: CSV columns imported as user-defined fields (metadata.custom).
+        $customMap = [];
+        $postedCustom = is_array($_POST['custom'] ?? null) ? $_POST['custom'] : [];
+        foreach ($headers as $hh) {
+            $key = md5($hh);
+            if (empty($postedCustom[$key]['on'])) continue;
+            $name = strtolower(trim((string)($postedCustom[$key]['name'] ?? '')));
+            $name = preg_replace('/[^a-z0-9_]/', '_', $name) ?? '';
+            $name = trim($name, '_');
+            if ($name === '' || !preg_match('/^[a-z_]/', $name)) continue;
+            if (in_array($name, array_keys($internalFields), true)) continue; // no shadowing
+            $customMap[$hh] = $name;
+        }
+
         $mappedCount = 0;
         foreach ($mapping as $v) if ($v !== '') $mappedCount++;
         $mappingConfidence01 = $mappedCount / max(1, count($internalFields));
 
         $stats = compute_csv_stats_for_imputation($path, $mapping, $impute);
         $errorsObj['mapping'] = $mapping;
+        $errorsObj['custom_map'] = $customMap;
         $errorsObj['impute'] = $impute;
         $errorsObj['stats'] = $stats;
         $errorsObj['mapping_confidence01'] = $mappingConfidence01;
@@ -1636,6 +1688,23 @@ function page_import_map(PDO $pdo, array $CONFIG, array $settings): void {
         echo "</div></td></tr>";
     }
     echo "</tbody></table></div>";
+    // Custom fields: any CSV column can be imported as a user-defined field.
+    $mappedCols = array_values(array_filter($savedMapping));
+    echo "<div class=\"fw-semibold mb-2 mt-4\">Custom fields</div>";
+    echo "<div class=\"small muted mb-2\">Columns that don't fit an internal field can be imported as custom fields. They're stored per profile, usable in rules as <span class=\"kbd\">custom.name</span> and in segment filters as <span class=\"kbd\">custom.name &gt;= 80</span>.</div>";
+    echo "<div class=\"table-responsive\"><table class=\"table table-sm align-middle mb-0\"><thead><tr><th>Import</th><th>CSV column</th><th>Custom field name</th></tr></thead><tbody>";
+    foreach ($headers as $hh) {
+        $key = md5($hh);
+        $suggested = trim((string)preg_replace('/[^a-z0-9_]/', '_', strtolower($hh)), '_');
+        $savedName = (string)($savedCustom[$hh] ?? '');
+        $isMappedInternal = in_array($hh, $mappedCols, true);
+        $checked = ($savedName !== '' || (!$savedCustom && !$isMappedInternal && !isset($internalFields[$hh]))) ? 'checked' : '';
+        $nameVal = $savedName !== '' ? $savedName : $suggested;
+        echo "<tr><td><input class=\"form-check-input\" type=\"checkbox\" name=\"custom[{$key}][on]\" value=\"1\" {$checked}></td>";
+        echo "<td class=\"mono\">" . h($hh) . ($isMappedInternal ? " <span class=\"badge text-bg-light border\">mapped</span>" : "") . "</td>";
+        echo "<td><input class=\"form-control form-control-sm mono\" name=\"custom[{$key}][name]\" value=\"" . h($nameVal) . "\" placeholder=\"field_name\"></td></tr>";
+    }
+    echo "</tbody></table></div>";
     echo "<div class=\"mt-3\"><button class=\"btn btn-primary\" type=\"submit\">Save mapping &amp; compute stats</button></div>";
     echo "<div class=\"small muted mt-2\">Mode/mean strategies do a two-pass streaming scan of the CSV (still memory-safe).</div>";
     echo "</div></div>";
@@ -1671,6 +1740,7 @@ function page_import_run(PDO $pdo, array $CONFIG, array $settings): void {
 
     $errorsObj = json_decode_safe((string)($import['errors_json'] ?? '{}'));
     $mapping = is_array($errorsObj['mapping'] ?? null) ? $errorsObj['mapping'] : [];
+    $customMap = is_array($errorsObj['custom_map'] ?? null) ? $errorsObj['custom_map'] : [];
     $impute = is_array($errorsObj['impute'] ?? null) ? $errorsObj['impute'] : [];
     $stats = is_array($errorsObj['stats'] ?? null) ? $errorsObj['stats'] : [];
     $mappingConfidence01 = (float)($errorsObj['mapping_confidence01'] ?? 0.7);
@@ -1745,6 +1815,16 @@ function page_import_run(PDO $pdo, array $CONFIG, array $settings): void {
                 $p['role'] = apply_imputation('role', $p['role'], $impute['role'] ?? ($CONFIG['defaultImputation']['role'] ?? []), $stats, $imputedFlags);
                 $p['last_activity_ts'] = to_int_or_null(apply_imputation('last_activity_ts', $p['last_activity_ts'], $impute['last_activity_ts'] ?? ($CONFIG['defaultImputation']['last_activity_ts'] ?? []), $stats, $imputedFlags));
 
+                // Custom fields: collect mapped columns into metadata.custom (numeric strings cast).
+                $custom = [];
+                foreach ($customMap as $col => $cname) {
+                    $i = $idx[$col] ?? null;
+                    if ($i === null) continue;
+                    $cv = trim((string)($row[$i] ?? ''));
+                    if ($cv === '') continue;
+                    $custom[$cname] = is_numeric($cv) ? $cv + 0 : $cv;
+                }
+
                 $meta = [
                     'imputed_fields' => $imputedFlags,
                     'imputation_plan' => $impute,
@@ -1752,6 +1832,7 @@ function page_import_run(PDO $pdo, array $CONFIG, array $settings): void {
                     'tags' => [],
                     'applied_rules' => [],
                     'applied_rule_ids_csv' => ',',
+                    'custom' => $custom,
                 ];
                 $p['metadata'] = json_encode_safe($meta);
                 $p['confidence_score'] = compute_confidence($p, $imputedFlags, $CONFIG, $mappingConfidence01);
@@ -1874,6 +1955,10 @@ function upsert_profile(PDO $pdo, array $p): string {
     }
     $merged['imputed_fields'] = $newMeta['imputed_fields'] ?? ($existingMeta['imputed_fields'] ?? []);
     $merged['last_import_id'] = $newMeta['last_import_id'] ?? ($existingMeta['last_import_id'] ?? null);
+    $merged['custom'] = array_merge(
+        is_array($existingMeta['custom'] ?? null) ? $existingMeta['custom'] : [],
+        is_array($newMeta['custom'] ?? null) ? $newMeta['custom'] : []
+    );
 
     $stmt = $pdo->prepare('UPDATE profiles SET
         name=:name,
@@ -2011,6 +2096,11 @@ function page_profile_view(PDO $pdo, array $CONFIG, array $settings): void {
         if ($isImp) echo " <span class=\"badge badge-accent\">imputed</span>";
         echo "</td></tr>";
     }
+    // Custom fields (user-defined, imported from CSV)
+    $custom = is_array($meta['custom'] ?? null) ? $meta['custom'] : [];
+    foreach ($custom as $cf => $cv) {
+        echo "<tr><td class=\"mono\">custom." . h((string)$cf) . " <span class=\"badge text-bg-light border\">custom</span></td><td>" . h(is_scalar($cv) ? (string)$cv : json_encode_safe($cv)) . "</td></tr>";
+    }
     echo "</tbody></table></div></div></div>";
 
     echo "<div class=\"col-lg-5\"><div class=\"card p-3\"><div class=\"fw-semibold mb-2\">Traceability</div>";
@@ -2080,7 +2170,11 @@ function validate_sql_filter(string $where, array $allowedFields): array {
     if (preg_match('/\b(attach|detach|pragma|vacuum|insert|update|delete|drop|alter|create)\b/i', $trim)) {
         return [false, 'Only WHERE-like filters are allowed'];
     }
-    $scan = preg_replace("/'([^']|'')*'/", "''", $trim) ?? $trim;
+
+    // Custom fields: "custom.X" is allowed and later translated to a JSON lookup.
+    // Neutralize them (and quoted strings) before scanning remaining identifiers.
+    $scan = preg_replace('/\bcustom\.[a-zA-Z_][a-zA-Z0-9_]*/', '0', $trim) ?? $trim;
+    $scan = preg_replace("/'([^']|'')*'/", "''", $scan) ?? $scan;
     preg_match_all('/\b[a-zA-Z_][a-zA-Z0-9_]*\b/', $scan, $m);
     $idents = $m[0] ?? [];
     $keywords = ['and','or','not','like','in','is','null','between','exists','true','false'];
@@ -2089,7 +2183,25 @@ function validate_sql_filter(string $where, array $allowedFields): array {
         if (in_array($lid, $keywords, true)) continue;
         if (!in_array($id, $allowedFields, true)) return [false, 'Unknown/unsafe field: ' . $id];
     }
+
     return [true, $trim];
+}
+
+// Translate custom.X -> json_extract(metadata, '$.custom.X'). Call at EXECUTION time only,
+// so stored segment filters stay in the human-readable custom.X form.
+function translate_custom_fields_sql(string $sql): string {
+    return preg_replace_callback('/\bcustom\.([a-zA-Z_][a-zA-Z0-9_]*)/', function ($mm) {
+        return "json_extract(metadata, '$.custom." . $mm[1] . "')";
+    }, $sql) ?? $sql;
+}
+
+function sqlite_supports_json(PDO $pdo): bool {
+    static $supported = null;
+    if ($supported === null) {
+        try { $pdo->query("SELECT json_extract('{}', '$.a')"); $supported = true; }
+        catch (Throwable $e) { $supported = false; }
+    }
+    return $supported;
 }
 
 /*
@@ -2140,7 +2252,7 @@ function page_rules(PDO $pdo, array $CONFIG, array $settings): void {
 
     echo "<div class=\"card p-3 mt-3\"><div class=\"fw-semibold mb-2\">Rule JSON format</div>";
     echo "<pre class=\"small mono\" style=\"white-space:pre-wrap\">" . h("{\n  \"match\": \"AND\",\n  \"conditions\": [\n    {\"field\":\"specialty\",\"op\":\"=\",\"value\":\"oncology\"},\n    {\"field\":\"consent_email\",\"op\":\"=\",\"value\": 1}\n  ],\n  \"continue_on_match\": true\n}\n\nActions JSON example:\n{\n  \"set_persona\":\"Oncology Engaged\",\n  \"set_priority_score\":85,\n  \"set_compliance_flag\":1,\n  \"add_tags\":[\"oncology\",\"email_ok\"]\n}") . "</pre>";
-    echo "<div class=\"small muted\">Supported ops: =, !=, &gt;, &lt;, &gt;=, &lt;=, in, contains, regex. Groups: use {\"all\": [...]} or {\"any\": [...]} nesting.</div></div>";
+    echo "<div class=\"small muted\">Supported ops: =, !=, &gt;, &lt;, &gt;=, &lt;=, in, contains, regex. Groups: use {\"all\": [...]} or {\"any\": [...]} nesting. Fields: any internal field, <span class=\"kbd\">tags</span>, or user-defined custom fields via <span class=\"kbd\">custom.name</span> (e.g. {\"field\":\"custom.kol_score\",\"op\":\"&gt;=\",\"value\":80}).</div></div>";
     page_footer();
 }
 
@@ -2282,7 +2394,10 @@ function build_segment_where(PDO $pdo, array $segment, string $mode, int $thresh
         $filter = (string)$segment['sql_filter'];
         [$ok, $res] = validate_sql_filter($filter, segment_allowed_fields());
         if (!$ok) throw new RuntimeException((string)$res);
-        $clauses[] = '(' . $res . ')';
+        if (preg_match('/\bcustom\./', $res) && !sqlite_supports_json($pdo)) {
+            throw new RuntimeException('This SQLite build lacks JSON1 support; custom.* segment filters are unavailable. Use a rule-based segment instead.');
+        }
+        $clauses[] = '(' . translate_custom_fields_sql($res) . ')';
     } else {
         $ids = json_decode_safe((string)($segment['rule_ids'] ?? '[]'));
         if (!is_array($ids) || !$ids) {
@@ -2354,7 +2469,7 @@ function page_segments(PDO $pdo, array $CONFIG, array $settings): void {
     echo "<div class=\"row g-2\">";
     echo "<div class=\"col-md-4\"><label class=\"form-label\">Name</label><input class=\"form-control\" name=\"name\" required></div>";
     echo "<div class=\"col-md-3\"><label class=\"form-label\">Type</label><select class=\"form-select\" name=\"type\" id=\"segType\"><option value=\"sql\">SQL filter</option><option value=\"rules\">Rule IDs</option></select></div>";
-    echo "<div class=\"col-md-5\" id=\"segSqlWrap\"><label class=\"form-label\">SQL-like WHERE</label><input class=\"form-control mono\" name=\"sql_filter\" placeholder=\"specialty = 'oncology' AND confidence_score >= 70\"></div>";
+    echo "<div class=\"col-md-5\" id=\"segSqlWrap\"><label class=\"form-label\">SQL-like WHERE <span class=\"muted\">(custom fields: custom.name)</span></label><input class=\"form-control mono\" name=\"sql_filter\" placeholder=\"specialty = 'oncology' AND custom.kol_score >= 80\"></div>";
     echo "</div>";
     echo "<div class=\"mt-2\" id=\"segRulesWrap\" style=\"display:none\">";
     if ($rules) {
@@ -2759,10 +2874,17 @@ function handle_load_sample(PDO $pdo, array $CONFIG, array $settings): void {
     $internal = ['hcp_id','name','email','specialty','region','organization','role','consent_email','consent_web','last_activity_ts','imports_count'];
     $map2 = [];
     foreach ($internal as $f) $map2[$f] = in_array($f, $headers, true) ? $f : '';
+    // Headers that aren't internal fields become custom fields (e.g. kol_score).
+    $customMap = [];
+    foreach ($headers as $hh) {
+        if (in_array($hh, $internal, true)) continue;
+        $cname = trim((string)preg_replace('/[^a-z0-9_]/', '_', strtolower($hh)), '_');
+        if ($cname !== '') $customMap[$hh] = $cname;
+    }
     $impute = [];
     foreach ($internal as $f) $impute[$f] = $CONFIG['defaultImputation'][$f] ?? ['strategy'=>'leave_null_flag','value'=>null];
     $stats = compute_csv_stats_for_imputation($path, $map2, $impute);
-    $errorsObj = ['mapping'=>$map2,'impute'=>$impute,'stats'=>$stats,'mapping_confidence01'=>1.0];
+    $errorsObj = ['mapping'=>$map2,'custom_map'=>$customMap,'impute'=>$impute,'stats'=>$stats,'mapping_confidence01'=>1.0];
     $pdo->prepare('UPDATE imports SET errors_json = :e, rows_total = :rt WHERE id = :id')->execute([':e'=>json_encode_safe($errorsObj), ':rt'=>(int)($stats['rows_total'] ?? 0), ':id'=>$importId]);
 
     audit($pdo, (int)$u['id'], 'sample_import_created', ['import_id' => $importId]);

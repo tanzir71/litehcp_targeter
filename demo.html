@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Demo — LiteHCP Targeter</title>
-    <meta name="description" content="Interactive in-browser demo of LiteHCP Targeter: 200 HCP profiles, 8 enrichment rules, 5 segments, and a campaign ROI simulator. No install, no server.">
+    <meta name="description" content="Fully functional in-browser demo of LiteHCP Targeter: upload your own CSV, map columns (including custom fields), edit enrichment rules and segment filters, simulate ROI. Data stays in your browser.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://tanzir71.github.io/litehcp_targeter/demo.html">
     <meta property="og:title" content="LiteHCP Targeter — Live Demo">
-    <meta property="og:description" content="Explore the full targeting pipeline in your browser: profiles, rules, segments, ROI simulation.">
+    <meta property="og:description" content="Upload your own CSV, edit rules and segments, simulate ROI — entirely in your browser.">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
             --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c;
             --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6; --acc:#2540ff; --acc-soft:#c8d0ff;
             --dk-bg:#0c0d0e; --dk-ink:#f4f3ee; --dk-mute:#8e8f88; --dk-rule:#232527;
-            --ok:#1a7f37; --warn:#9a6700;
+            --ok:#1a7f37; --warn:#9a6700; --danger:#b3261e;
             --f-sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
             --f-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
         }
@@ -40,9 +40,12 @@
         .btn-primary { background:var(--fg); color:var(--bg); }
         .btn-primary:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
         .btn-sm { height:30px; padding:0 12px; font-size:12.5px; }
+        .btn-danger { border-color:var(--danger); color:var(--danger); }
+        .btn-danger:hover { background:var(--danger); border-color:var(--danger); color:#fff; }
         .demo-note { background:var(--dk-bg); color:var(--dk-mute); font-family:var(--f-mono); font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; padding:8px 0; }
         .demo-note .container { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
         .demo-note b { color:var(--dk-ink); font-weight:500; }
+        .demo-note .src { color:#8fa3ff; }
         .tabs { display:flex; flex-wrap:wrap; gap:2px; border-bottom:1px solid var(--border); margin-top:24px; }
         .tab { display:inline-flex; align-items:center; height:36px; padding:0 14px; font-family:var(--f-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); border:0; border-bottom:2px solid transparent; margin-bottom:-1px; background:transparent; cursor:pointer; }
         .tab:hover { color:var(--fg); background:var(--bg-alt); }
@@ -69,7 +72,7 @@
         .bar-row .n { width:36px; text-align:right; font-family:var(--f-mono); font-size:11px; }
         table { width:100%; border-collapse:collapse; font-size:13px; }
         th { font-family:var(--f-mono); font-size:10.5px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted-2); text-align:left; padding:8px 10px; border-bottom:1px solid var(--fg); white-space:nowrap; }
-        td { padding:7px 10px; border-bottom:1px solid var(--border-soft); }
+        td { padding:7px 10px; border-bottom:1px solid var(--border-soft); vertical-align:middle; }
         tbody tr:hover { background:var(--bg-alt); }
         .table-wrap { overflow-x:auto; border:1px solid var(--border); background:var(--panel); margin-top:16px; }
         .badge { display:inline-block; padding:2px 7px; font-family:var(--f-mono); font-size:10px; font-weight:500; letter-spacing:0.07em; text-transform:uppercase; border:1px solid transparent; white-space:nowrap; }
@@ -81,17 +84,23 @@
         .controls { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; align-items:flex-end; }
         .field { display:flex; flex-direction:column; gap:4px; }
         .field label { font-size:11px; font-family:var(--f-mono); letter-spacing:0.08em; text-transform:uppercase; color:var(--muted-2); }
-        select, input[type=text], input[type=number] { height:34px; padding:0 10px; border:1px solid var(--border); background:#fff; color:var(--fg); font-family:var(--f-sans); font-size:13px; border-radius:0; }
-        select:focus, input:focus { outline:none; border-color:var(--acc); box-shadow:0 0 0 2px var(--acc-soft); }
+        select, input[type=text], input[type=number], input[type=file], textarea { padding:0 10px; border:1px solid var(--border); background:#fff; color:var(--fg); font-family:var(--f-sans); font-size:13px; border-radius:0; }
+        select, input[type=text], input[type=number] { height:34px; }
+        input[type=file] { padding:5px 10px; }
+        textarea { padding:8px 10px; font-family:var(--f-mono); font-size:12px; line-height:1.6; width:100%; }
+        select:focus, input:focus, textarea:focus { outline:none; border-color:var(--acc); box-shadow:0 0 0 2px var(--acc-soft); }
         .num-right { text-align:right; font-variant-numeric:tabular-nums; }
         .seg-grid { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:16px; }
-        @media (min-width:900px) { .seg-grid { grid-template-columns:repeat(5,1fr); } }
-        .seg-cell { background:var(--panel); padding:16px; cursor:pointer; border:0; text-align:left; font-family:var(--f-sans); transition:background-color .12s ease; }
+        @media (min-width:760px) { .seg-grid { grid-template-columns:repeat(3,1fr); } }
+        .seg-cell { background:var(--panel); padding:16px; cursor:pointer; border:0; text-align:left; font-family:var(--f-sans); transition:background-color .12s ease; position:relative; }
         .seg-cell:hover { background:var(--bg); }
         .seg-cell.sel { outline:2px solid var(--acc); outline-offset:-2px; background:#fff; }
-        .seg-cell .nm { font-size:13.5px; font-weight:650; }
+        .seg-cell .nm { font-size:13.5px; font-weight:650; padding-right:48px; }
         .seg-cell .ct { margin-top:6px; font-size:22px; font-weight:650; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
         .seg-cell .fl { margin-top:6px; font-family:var(--f-mono); font-size:10.5px; color:var(--muted-2); word-break:break-word; }
+        .seg-cell .mini { position:absolute; top:10px; right:10px; display:flex; gap:4px; }
+        .mini-btn { border:1px solid var(--border); background:var(--panel); font-family:var(--f-mono); font-size:10px; padding:2px 6px; cursor:pointer; color:var(--muted); }
+        .mini-btn:hover { border-color:var(--fg); color:var(--fg); }
         .sim-grid { display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px; }
         @media (min-width:900px) { .sim-grid { grid-template-columns:5fr 7fr; } }
         .sim-out { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border); border:1px solid var(--border); }
@@ -109,6 +118,17 @@
         footer a { border-bottom:1px solid var(--border); }
         footer a:hover { color:var(--fg); border-color:var(--acc); }
         .pager { display:flex; gap:8px; align-items:center; margin-top:12px; font-size:12.5px; }
+        .drop { border:2px dashed var(--border); background:var(--panel); padding:24px; text-align:center; color:var(--muted); margin-top:16px; }
+        .drop.over { border-color:var(--acc); background:#fff; }
+        .err { color:var(--danger); font-size:12.5px; margin-top:8px; white-space:pre-wrap; font-family:var(--f-mono); }
+        .ok-msg { color:var(--ok); font-size:12.5px; margin-top:8px; font-family:var(--f-mono); }
+        .editor { border:1px solid var(--fg); background:#fff; padding:16px 18px; margin-top:16px; }
+        .editor h3 { margin:0 0 12px; font-size:14.5px; font-weight:650; }
+        .ed-row { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:10px; }
+        @media (min-width:760px) { .ed-row.cols { grid-template-columns:2fr 1fr; } .ed-row.cols2 { grid-template-columns:1fr 1fr; } }
+        .hint { font-size:12px; color:var(--muted-2); font-family:var(--f-mono); }
+        .toast-box { position:fixed; bottom:16px; right:16px; z-index:90; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+        .toastd { background:var(--dk-bg); color:var(--dk-ink); font-size:13px; padding:10px 14px; border:1px solid var(--dk-rule); box-shadow:0 6px 24px rgba(10,10,10,.18); }
     </style>
 </head>
 <body>
@@ -128,13 +148,14 @@
     </header>
     <div class="demo-note">
         <div class="container">
-            <span><b>Demo mode</b> · runs entirely in your browser · nothing is uploaded anywhere</span>
-            <span>dataset: <b>200 profiles · 8 rules · 5 segments</b> — identical to the app's embedded sample</span>
+            <span><b>Demo mode</b> · runs entirely in your browser · uploads never leave your machine (localStorage only)</span>
+            <span>dataset: <b class="src" id="data-src">sample · 200 profiles</b></span>
         </div>
     </div>
     <main class="container">
         <div class="tabs" role="tablist">
             <button class="tab active" data-view="dashboard" role="tab">Dashboard</button>
+            <button class="tab" data-view="import" role="tab">Import</button>
             <button class="tab" data-view="profiles" role="tab">Profiles</button>
             <button class="tab" data-view="rules" role="tab">Rules</button>
             <button class="tab" data-view="segments" role="tab">Segments</button>
@@ -143,7 +164,7 @@
 
         <section id="view-dashboard" class="view active">
             <h1 class="h4">Dashboard</h1>
-            <div class="muted small">Import → normalize/impute → rules enrichment → segment → simulate → export.</div>
+            <div class="muted small">Import → normalize/impute → rules enrichment → segment → simulate → export. Everything below recomputes live as you import data or edit rules.</div>
             <div class="cards">
                 <div class="kcard"><div class="lbl">Profiles</div><div class="num" id="k-profiles">—</div></div>
                 <div class="kcard"><div class="lbl">Rules</div><div class="num" id="k-rules">—</div></div>
@@ -164,27 +185,67 @@
                 <h3>Data quality</h3>
                 <div class="two-col">
                     <div id="quality-bars"></div>
-                    <div class="small muted">Dotted values in the Profiles tab were <span class="imputed">imputed</span> during import — the engine fills gaps with a per-field strategy (fixed / mode / mean / leave-null-and-flag) and lowers the profile's confidence score so downstream segments can demand higher-quality data with <span class="mono">strict</span> mode.</div>
+                    <div class="small muted">Dotted values in the Profiles tab were <span class="imputed">imputed</span> during import — gaps are filled per-field and lower the profile's confidence score, so segments can demand higher-quality data with <span class="mono">strict</span> mode. Custom fields from your CSV (anything beyond the standard columns) are kept per profile and usable in rules as <span class="mono">custom.name</span>.</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-import" class="view">
+            <h1 class="h4">Import your own CSV</h1>
+            <div class="muted small">Upload or paste any CSV. Map columns to standard fields; unmapped columns can become <b>custom fields</b>. The data replaces the sample dataset and is stored only in your browser's localStorage.</div>
+            <div class="two-col">
+                <div>
+                    <div class="drop" id="drop-zone">
+                        <div><b>Drop a .csv here</b> or</div>
+                        <div style="margin-top:10px"><input type="file" id="csv-file" accept=".csv,text/csv"></div>
+                    </div>
+                    <div class="panel">
+                        <h3>…or paste CSV</h3>
+                        <textarea id="csv-paste" rows="6" placeholder="hcp_id,name,specialty,npi_number,kol_score&#10;HCP-1,Dr. A,oncology,12345,91"></textarea>
+                        <div class="controls" style="margin-top:10px">
+                            <button class="btn" id="parse-paste">Parse pasted CSV</button>
+                            <button class="btn" id="load-sample">Reset to sample dataset</button>
+                        </div>
+                        <div class="err" id="import-err"></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3>Standard fields</h3>
+                    <div class="small muted">These columns are recognized automatically (exact or fuzzy name match): <span class="mono">hcp_id, name, email, specialty, region, organization, role, consent_email, consent_web, last_activity_ts, imports_count</span>. <b>Only hcp_id and name are required</b> — and even those can be picked from any column via mapping. Everything else is imputed when missing: specialty → "General", region → "Unknown", consents → 0, with confidence penalties so nothing is silently guessed.</div>
+                    <h3 style="margin-top:18px">Custom fields</h3>
+                    <div class="small muted">Columns that don't match a standard field are imported as custom fields — e.g. <span class="mono">npi_number</span>, <span class="mono">kol_score</span>, <span class="mono">decile</span>, <span class="mono">territory</span>. They show up on profiles, can drive rules (<span class="mono">{"field":"custom.kol_score","op":"&gt;=","value":80}</span>) and segment filters (<span class="mono">custom.kol_score &gt;= 80</span>). The sample dataset itself ships a custom field (<span class="mono">kol_score</span>) to prove the path.</div>
+                </div>
+            </div>
+            <div id="map-stage" style="display:none">
+                <div class="editor">
+                    <h3>Map columns — <span class="mono" id="map-filename"></span></h3>
+                    <div class="table-wrap" style="margin-top:8px">
+                        <table id="map-table">
+                            <thead><tr><th>CSV column</th><th>Sample value</th><th>Maps to</th><th>Custom field name</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="controls">
+                        <button class="btn btn-primary" id="run-import">Import rows</button>
+                        <span class="small muted" id="map-rowcount"></span>
+                    </div>
+                    <div class="err" id="map-err"></div>
                 </div>
             </div>
         </section>
 
         <section id="view-profiles" class="view">
             <h1 class="h4">Profiles</h1>
-            <div class="muted small">200 imported HCP profiles, scored and enriched. Click a column header to sort.</div>
+            <div class="muted small" id="profiles-sub">Scored and enriched. Click a column header to sort.</div>
             <div class="controls">
                 <div class="field"><label>Search</label><input type="text" id="f-search" placeholder="name, org, id…"></div>
-                <div class="field"><label>Specialty</label><select id="f-specialty"><option value="">All</option></select></div>
-                <div class="field"><label>Persona</label><select id="f-persona"><option value="">All</option></select></div>
-                <div class="field"><label>Region</label><select id="f-region"><option value="">All</option></select></div>
+                <div class="field"><label>Specialty</label><select id="f-specialty"></select></div>
+                <div class="field"><label>Persona</label><select id="f-persona"></select></div>
+                <div class="field"><label>Region</label><select id="f-region"></select></div>
             </div>
             <div class="table-wrap">
                 <table id="profiles-table">
-                    <thead><tr>
-                        <th data-sort="hcp_id">ID</th><th data-sort="name">Name</th><th data-sort="specialty">Specialty</th>
-                        <th data-sort="region">Region</th><th data-sort="organization">Organization</th><th data-sort="persona">Persona</th>
-                        <th data-sort="priority" class="num-right">Priority</th><th data-sort="confidence" class="num-right">Confidence</th>
-                    </tr></thead>
+                    <thead><tr></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -197,21 +258,42 @@
 
         <section id="view-rules" class="view">
             <h1 class="h4">Rules</h1>
-            <div class="muted small">JSON rules evaluate in priority order. Each can set a persona, adjust scores, add tags, or stop the chain.</div>
+            <div class="muted small">JSON rules evaluate in priority order (highest first) and re-run instantly when you save. Same format as the real app.</div>
+            <div class="controls">
+                <button class="btn btn-primary" id="rule-new">+ New rule</button>
+                <button class="btn" id="rules-reset">Restore sample rules</button>
+            </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>Priority</th><th>Rule</th><th>Conditions</th><th>Actions</th><th class="num-right">Profiles hit</th></tr></thead>
+                    <thead><tr><th>Priority</th><th>Rule</th><th>Conditions</th><th>Actions</th><th class="num-right">Hits</th><th></th></tr></thead>
                     <tbody id="rules-body"></tbody>
                 </table>
             </div>
-            <div class="panel small muted">In the real app, rules are editable JSON with a built-in tester that runs any draft rule against up to 50 live profiles before you save it.</div>
+            <div class="editor" id="rule-editor" style="display:none">
+                <h3 id="rule-ed-title">Edit rule</h3>
+                <div class="ed-row cols">
+                    <div class="field"><label>Name</label><input type="text" id="re-name"></div>
+                    <div class="field"><label>Priority (higher runs first)</label><input type="number" id="re-priority" value="50"></div>
+                </div>
+                <div class="ed-row cols2">
+                    <div class="field"><label>Conditions JSON</label><textarea id="re-cond" rows="12"></textarea></div>
+                    <div class="field"><label>Actions JSON</label><textarea id="re-act" rows="12"></textarea></div>
+                </div>
+                <div class="hint">ops: = != &gt; &gt;= &lt; &lt;= in contains regex · fields: standard, tags, or custom.name · actions: set_persona, set_priority_score, add_priority_delta, set_compliance_flag, add_tags · "continue_on_match": false stops the chain</div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="rule-save">Save & re-run rules</button>
+                    <button class="btn" id="rule-cancel">Cancel</button>
+                    <button class="btn btn-danger" id="rule-delete">Delete rule</button>
+                </div>
+                <div class="err" id="rule-err"></div>
+            </div>
         </section>
 
         <section id="view-segments" class="view">
             <h1 class="h4">Segments</h1>
-            <div class="muted small">Safe SQL-like filters over the profile table. Click a segment to preview members; export is CSV with privacy-first fields.</div>
-            <div class="seg-grid" id="seg-grid"></div>
+            <div class="muted small">SQL-like filters over profiles — editable. Fields: standard fields, <span class="mono">persona</span>, <span class="mono">priority_score</span>, <span class="mono">confidence_score</span>, <span class="mono">compliance_flag</span>, and <span class="mono">custom.*</span>. Combine with AND / OR.</div>
             <div class="controls">
+                <button class="btn btn-primary" id="seg-new">+ New segment</button>
                 <div class="field"><label>Mode</label>
                     <select id="seg-mode">
                         <option value="strict">strict — confidence ≥ 70 required</option>
@@ -219,6 +301,20 @@
                     </select>
                 </div>
                 <button class="btn" id="seg-export">Export CSV (minimal fields)</button>
+            </div>
+            <div class="seg-grid" id="seg-grid"></div>
+            <div class="editor" id="seg-editor" style="display:none">
+                <h3 id="seg-ed-title">Edit segment</h3>
+                <div class="ed-row cols">
+                    <div class="field"><label>Filter (SQL-like WHERE)</label><input type="text" id="se-filter" class="mono" placeholder="specialty = 'oncology' AND custom.kol_score >= 80"></div>
+                    <div class="field"><label>Name</label><input type="text" id="se-name"></div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="seg-save">Save segment</button>
+                    <button class="btn" id="seg-cancel">Cancel</button>
+                    <button class="btn btn-danger" id="seg-delete">Delete segment</button>
+                </div>
+                <div class="err" id="seg-err"></div>
             </div>
             <div class="table-wrap">
                 <table>
@@ -231,7 +327,7 @@
 
         <section id="view-simulator" class="view">
             <h1 class="h4">Campaign simulator</h1>
-            <div class="muted small">Project reach, responses, cost, and ROI from a segment before spending anything. Runs are audited in the real app.</div>
+            <div class="muted small">Project reach, responses, cost, and ROI from a segment before spending anything.</div>
             <div class="sim-grid">
                 <div class="panel">
                     <h3>Assumptions</h3>
@@ -250,261 +346,581 @@
                         <div class="sim-cell"><div class="lbl">Projected value</div><div class="num" id="s-value">—</div></div>
                         <div class="sim-cell"><div class="lbl">ROI (value/cost)</div><div class="num acc" id="s-roi">—</div></div>
                     </div>
-                    <div class="panel small muted">ROI = projected value ÷ cost. The real app stores every simulation run in the audit log with its assumptions, so projections used in planning are traceable later.</div>
+                    <div class="panel small muted">ROI = projected value ÷ cost. In the real app every simulation run is stored in the audit log with its assumptions.</div>
                 </div>
             </div>
         </section>
     </main>
     <footer>
         <div class="container" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
-            <div>This demo mirrors the embedded sample dataset of the real app — <a href="./index.html#setup">deploy it in minutes</a>.</div>
+            <div>This demo mirrors the real app's engine and sample dataset — <a href="./index.html#setup">deploy it in minutes</a>.</div>
             <div><a href="./index.html">Home</a> · <a href="./docs.html">Docs</a> · <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></div>
         </div>
     </footer>
+    <div class="toast-box" id="toast-box"></div>
 
     <script>
     'use strict';
-    /* ── deterministic dataset: same LCG + pools as litehcp.php sample_csv() ── */
-    let seed = 20260612n;
-    function rand(n) { seed = (seed * 1103515245n + 12345n) % 2147483648n; return Number(seed % BigInt(Math.max(1, n))); }
-    const FIRST = ['Amira','Ben','Carla','Dinesh','Elena','Farid','Grace','Hiro','Imani','Jonas','Katya','Liam','Mei','Noor','Omar','Priya','Quinn','Rosa','Sven','Tara','Umar','Vera','Wei','Ximena','Yusuf','Zoe','Anders','Bianca','Chidi','Dalia','Emil','Fatima','Gustav','Hana','Idris','Jana','Kofi','Leila','Marco','Nadia'];
-    const LAST = ['Khan','Wu','Diaz','Patel','Sorensen','Haddad','Okafor','Tanaka','Jallow','Berg','Ivanova','Connolly','Chen','Rahman','Farouk','Iyer','Marsh','Alvarez','Lindqvist','Bose','Aziz','Petrova','Zhang','Reyes','Demir','Mertens','Holm','Ricci','Eze','Mansour','Novak','Said','Lund','Kobayashi','Toure','Kovac','Mensah','Nasser','Bianchi','Karim'];
-    const SPEC_POOL = ['oncology','oncology','oncology','cardiology','cardiology','cardiology','dermatology','dermatology','neurology','endocrinology','pediatrics','psychiatry','rheumatology','pulmonology','primary care','primary care'];
-    const REGIONS = ['West','East','Midwest','South','Northeast'];
-    const ORGS = ['Acme Health','Sunrise Clinic','Metro Hospital','Lakeside Medical Group','Northbridge Health','Cedar Valley Clinic','St. Adelhart Hospital','Riverbend Oncology Center','Harborview Cardiology','Summit Care Partners','Prairie Family Medicine','Bluestone Medical Center','Pinecrest Health Network','Westgate Specialty Group'];
-    const ROLE_POOL = ['Physician','Physician','Physician','Physician','Physician','Physician','Nurse','Nurse','Nurse Practitioner','Physician Assistant','Pharmacist'];
+    /* ════════ helpers ════════ */
+    const $ = s => document.querySelector(s);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const NOW = Math.floor(Date.now() / 1000);
-
-    const profiles = [];
-    for (let i = 0; i < 200; i++) {
-        const fn = FIRST[rand(FIRST.length)], ln = LAST[rand(LAST.length)];
-        const role = ROLE_POOL[rand(ROLE_POOL.length)];
-        const prefix = role === 'Physician' ? 'Dr. ' : (role === 'Nurse' ? 'Nurse ' : '');
-        const email = rand(100) < 12 ? null : (fn + '.' + ln + (i + 1)).toLowerCase() + '@example.test';
-        const specialtyRaw = rand(100) < 6 ? null : SPEC_POOL[rand(SPEC_POOL.length)];
-        const regionRaw = rand(100) < 9 ? null : REGIONS[rand(REGIONS.length)];
-        const org = ORGS[rand(ORGS.length)];
-        const consentEmail = rand(100) < 68 ? 1 : 0;
-        const consentWeb = rand(100) < 58 ? 1 : 0;
-        let lastActivity = null;
-        if (rand(100) >= 15) { const d = Math.min(rand(365), rand(365)); lastActivity = NOW - d * 86400 - rand(86400); }
-        const imports = 1 + rand(4) + ((consentEmail && consentWeb) ? rand(5) : 0);
-        profiles.push({
-            hcp_id: 'HCP-' + (1001 + i), name: prefix + fn + ' ' + ln, email, role, org_raw: org,
-            specialty: specialtyRaw ?? 'General', specialty_imputed: specialtyRaw === null,
-            region: regionRaw ?? 'Unknown', region_imputed: regionRaw === null,
-            organization: org, consent_email: consentEmail, consent_web: consentWeb,
-            last_activity_ts: lastActivity, imports_count: imports, tags: [], persona: null, compliance: null
-        });
+    const LS_KEY = 'litehcp_demo_v2';
+    function toast(msg) {
+        const t = document.createElement('div'); t.className = 'toastd'; t.textContent = msg;
+        $('#toast-box').appendChild(t);
+        setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 420); }, 3200);
     }
 
-    /* ── scoring (mirrors compute_base_priority + compute_confidence defaults) ── */
-    const RECENCY_WINDOW = 90 * 86400;
-    profiles.forEach(p => {
-        const consent01 = (p.consent_email + p.consent_web) / 2;
-        let recency01 = 0;
-        if (p.last_activity_ts) { const age = NOW - p.last_activity_ts; recency01 = Math.max(0, 1 - age / RECENCY_WINDOW); }
-        const engagement01 = Math.min(1, p.imports_count / 10);
-        p.priority = Math.round((0.30 * consent01 + 0.40 * recency01 + 0.30 * engagement01) * 100);
+    /* ════════ sample dataset (bit-identical to litehcp.php sample_csv) ════════ */
+    function generateSample() {
+        let seed = 20260612n;
+        const rand = n => { seed = (seed * 1103515245n + 12345n) % 2147483648n; return Number(seed % BigInt(Math.max(1, n))); };
+        const FIRST = ['Amira','Ben','Carla','Dinesh','Elena','Farid','Grace','Hiro','Imani','Jonas','Katya','Liam','Mei','Noor','Omar','Priya','Quinn','Rosa','Sven','Tara','Umar','Vera','Wei','Ximena','Yusuf','Zoe','Anders','Bianca','Chidi','Dalia','Emil','Fatima','Gustav','Hana','Idris','Jana','Kofi','Leila','Marco','Nadia'];
+        const LAST = ['Khan','Wu','Diaz','Patel','Sorensen','Haddad','Okafor','Tanaka','Jallow','Berg','Ivanova','Connolly','Chen','Rahman','Farouk','Iyer','Marsh','Alvarez','Lindqvist','Bose','Aziz','Petrova','Zhang','Reyes','Demir','Mertens','Holm','Ricci','Eze','Mansour','Novak','Said','Lund','Kobayashi','Toure','Kovac','Mensah','Nasser','Bianchi','Karim'];
+        const SPEC = ['oncology','oncology','oncology','cardiology','cardiology','cardiology','dermatology','dermatology','neurology','endocrinology','pediatrics','psychiatry','rheumatology','pulmonology','primary care','primary care'];
+        const REG = ['West','East','Midwest','South','Northeast'];
+        const ORGS = ['Acme Health','Sunrise Clinic','Metro Hospital','Lakeside Medical Group','Northbridge Health','Cedar Valley Clinic','St. Adelhart Hospital','Riverbend Oncology Center','Harborview Cardiology','Summit Care Partners','Prairie Family Medicine','Bluestone Medical Center','Pinecrest Health Network','Westgate Specialty Group'];
+        const ROLES = ['Physician','Physician','Physician','Physician','Physician','Physician','Nurse','Nurse','Nurse Practitioner','Physician Assistant','Pharmacist'];
+        const out = [];
+        for (let i = 0; i < 200; i++) {
+            const fn = FIRST[rand(FIRST.length)], ln = LAST[rand(LAST.length)];
+            const role = ROLES[rand(ROLES.length)];
+            const prefix = role === 'Physician' ? 'Dr. ' : (role === 'Nurse' ? 'Nurse ' : '');
+            const email = rand(100) < 12 ? null : (fn + '.' + ln + (i + 1)).toLowerCase() + '@example.test';
+            const specRaw = rand(100) < 6 ? null : SPEC[rand(SPEC.length)];
+            const regRaw = rand(100) < 9 ? null : REG[rand(REG.length)];
+            const org = ORGS[rand(ORGS.length)];
+            const ce = rand(100) < 68 ? 1 : 0, cw = rand(100) < 58 ? 1 : 0;
+            let act = null;
+            if (rand(100) >= 15) { const d = Math.min(rand(365), rand(365)); act = NOW - d * 86400 - rand(86400); }
+            const imports = 1 + rand(4) + ((ce && cw) ? rand(5) : 0);
+            // PHP: max($rand(101), $rand(101) > 79 ? $rand(101) : 0) — lazy 3rd draw, mirror exactly
+            const a = rand(101); const b = rand(101); const kol = Math.max(a, b > 79 ? rand(101) : 0);
+            out.push(makeProfile({
+                hcp_id: 'HCP-' + (1001 + i), name: prefix + fn + ' ' + ln, email,
+                specialty: specRaw, region: regRaw, organization: org, role,
+                consent_email: ce, consent_web: cw, last_activity_ts: act, imports_count: imports,
+                custom: { kol_score: kol },
+            }));
+        }
+        return out;
+    }
+
+    /* ════════ profile construction: imputation + confidence (mirrors the app) ════════ */
+    function makeProfile(src) {
+        const p = {
+            hcp_id: String(src.hcp_id ?? '').trim(),
+            name: String(src.name ?? '').trim(),
+            email: src.email || null,
+            specialty: src.specialty || null, region: src.region || null,
+            organization: src.organization || null, role: src.role || null,
+            consent_email: boolish(src.consent_email), consent_web: boolish(src.consent_web),
+            last_activity_ts: numOrNull(src.last_activity_ts),
+            imports_count: Math.max(0, parseInt(src.imports_count, 10) || 0),
+            custom: src.custom && typeof src.custom === 'object' ? src.custom : {},
+            imputed: {}, tags: [], persona: null, compliance: null, priority: 0, confidence: 0,
+        };
+        if (!p.specialty) { p.specialty = 'General'; p.imputed.specialty = true; }
+        if (!p.region) { p.region = 'Unknown'; p.imputed.region = true; }
+        if (!p.organization) { p.organization = 'Unknown'; p.imputed.organization = true; }
+        if (!p.role) { p.role = 'Clinician'; p.imputed.role = true; }
+        if (!p.imports_count) p.imports_count = 1;
         let conf = 100;
         if (!p.email) conf -= 10;
         if (!p.last_activity_ts) conf -= 10;
-        if (p.specialty_imputed) conf -= 6;
-        if (p.region_imputed) conf -= 6;
+        if (p.imputed.specialty) conf -= 6;
+        if (p.imputed.region) conf -= 6;
         p.confidence = Math.max(0, conf);
-    });
+        return p;
+    }
+    function boolish(v) { const s = String(v ?? '').trim().toLowerCase(); return ['1','true','yes','y','on'].includes(s) ? 1 : 0; }
+    function numOrNull(v) { const n = parseInt(v, 10); return Number.isFinite(n) && n > 0 ? n : null; }
 
-    /* ── rules (same 8 as the app) ── */
-    const recentCutoff = NOW - 30 * 86400;
-    const RULES = [
-        { p:200, name:'No consent at all => Do Not Contact', stop:true,
-          cond:x => x.consent_email===0 && x.consent_web===0,
-          condTxt:'consent_email = 0 AND consent_web = 0',
-          act:x => { x.persona='Do Not Contact'; x.priority=5; x.compliance=0; x.tags.push('no_consent','suppressed'); },
-          actTxt:'persona=Do Not Contact · priority=5 · flag=0' },
-        { p:100, name:'Oncology + email consent => Oncology Engaged',
-          cond:x => x.specialty==='oncology' && x.consent_email===1,
-          condTxt:"specialty = 'oncology' AND consent_email = 1",
-          act:x => { x.persona='Oncology Engaged'; x.priority+=15; x.compliance=1; x.tags.push('oncology','email_ok'); },
-          actTxt:'persona=Oncology Engaged · +15 · flag=1' },
-        { p:95, name:'Cardiology + email consent => Cardio Engaged',
-          cond:x => x.specialty==='cardiology' && x.consent_email===1,
-          condTxt:"specialty = 'cardiology' AND consent_email = 1",
-          act:x => { x.persona='Cardio Engaged'; x.priority+=12; x.compliance=1; x.tags.push('cardiology','email_ok'); },
-          actTxt:'persona=Cardio Engaged · +12 · flag=1' },
-        { p:80, name:'High-frequency engagers (5+ imports)',
-          cond:x => x.imports_count>=5, condTxt:'imports_count >= 5',
-          act:x => { x.priority+=10; x.tags.push('power_user'); }, actTxt:'+10 · tag power_user' },
-        { p:75, name:'Active in last 30 days => recency boost',
-          cond:x => x.last_activity_ts!==null && x.last_activity_ts>=recentCutoff, condTxt:'last_activity_ts >= now-30d',
-          act:x => { x.priority+=8; x.tags.push('recently_active'); }, actTxt:'+8 · tag recently_active' },
-        { p:60, name:'Web-only consent => Web Reachable',
-          cond:x => x.consent_email===0 && x.consent_web===1, condTxt:'consent_email = 0 AND consent_web = 1',
-          act:x => { x.persona='Web Reachable'; x.tags.push('web_only'); }, actTxt:'persona=Web Reachable' },
-        { p:55, name:'Advanced practice providers => APP tag',
-          cond:x => x.role==='Nurse Practitioner' || x.role==='Physician Assistant', condTxt:"role IN ('NP','PA')",
-          act:x => { x.priority+=5; x.tags.push('advanced_practice'); }, actTxt:'+5 · tag advanced_practice' },
-        { p:40, name:'Low engagement (single import) => cooldown',
-          cond:x => x.imports_count<=1, condTxt:'imports_count <= 1',
-          act:x => { x.priority-=8; x.tags.push('low_engagement'); }, actTxt:'−8 · tag low_engagement' },
-    ];
-    RULES.forEach(r => r.hits = 0);
-    profiles.forEach(p => {
-        for (const r of RULES) {
-            if (r.cond(p)) { r.act(p); r.hits++; if (r.stop) break; }
+    /* ════════ rule engine (port of eval_conditions / op_match / apply_actions) ════════ */
+    function getFieldValue(p, field) {
+        if (field === 'tags') return p.tags;
+        if (typeof field === 'string' && field.startsWith('custom.')) return p.custom[field.slice(7)] ?? null;
+        const map = { priority_score: 'priority', confidence_score: 'confidence', compliance_flag: 'compliance' };
+        if (field in map) return p[map[field]];
+        if (field in p) return p[field];
+        return p.custom[field] ?? null;
+    }
+    function opMatch(left, op, right) {
+        op = String(op).toLowerCase().trim();
+        if (op === 'in') {
+            const arr = Array.isArray(right) ? right : String(right).split(',').map(s => s.trim());
+            return arr.map(String).includes(String(left));
         }
-        p.priority = Math.max(0, Math.min(100, p.priority));
-    });
+        if (op === 'contains') {
+            if (Array.isArray(left)) return left.map(String).includes(String(right));
+            return String(left ?? '').toLowerCase().includes(String(right).toLowerCase());
+        }
+        if (op === 'regex') { try { return new RegExp(String(right).replace(/^\/|\/[a-z]*$/g, '')).test(String(left ?? '')); } catch { return false; } }
+        const ln = (left !== null && left !== '' && !isNaN(left)) ? Number(left) : null;
+        const rn = (right !== null && right !== '' && !isNaN(right)) ? Number(right) : null;
+        const l = (ln !== null && rn !== null) ? ln : String(left ?? ''), r = (ln !== null && rn !== null) ? rn : String(right ?? '');
+        switch (op) { case '=': return l == r; case '!=': return l != r; case '>': return l > r; case '<': return l < r; case '>=': return l >= r; case '<=': return l <= r; default: return false; }
+    }
+    function evalConditions(p, node) {
+        if (!node || typeof node !== 'object') return false;
+        if (Array.isArray(node.all)) return node.all.every(c => evalConditions(p, c));
+        if (Array.isArray(node.any)) return node.any.some(c => evalConditions(p, c));
+        if (Array.isArray(node.conditions)) {
+            const or = String(node.match ?? 'AND').toUpperCase() === 'OR';
+            return or ? node.conditions.some(c => evalConditions(p, c)) : node.conditions.every(c => evalConditions(p, c));
+        }
+        if (!node.field || !node.op) return false;
+        return opMatch(getFieldValue(p, node.field), node.op, node.value ?? null);
+    }
+    function applyActions(p, a) {
+        if ('set_persona' in a) p.persona = String(a.set_persona);
+        if ('set_priority_score' in a) p.priority = Number(a.set_priority_score);
+        if ('add_priority_delta' in a) p.priority += Number(a.add_priority_delta);
+        if ('set_compliance_flag' in a) p.compliance = boolish(a.set_compliance_flag);
+        if (Array.isArray(a.add_tags)) a.add_tags.forEach(t => { t = String(t).trim(); if (t && !p.tags.includes(t)) p.tags.push(t); });
+    }
+    function basePriority(p) {
+        const consent = (p.consent_email + p.consent_web) / 2;
+        let recency = 0;
+        if (p.last_activity_ts) recency = Math.max(0, 1 - (NOW - p.last_activity_ts) / (90 * 86400));
+        const engagement = Math.min(1, p.imports_count / 10);
+        return Math.round((0.30 * consent + 0.40 * recency + 0.30 * engagement) * 100);
+    }
+    function recomputeAll() {
+        const sorted = [...state.rules].sort((a, b) => b.priority - a.priority);
+        sorted.forEach(r => r.hits = 0);
+        for (const p of state.profiles) {
+            p.tags = []; p.persona = null; p.compliance = null;
+            p.priority = basePriority(p);
+            for (const r of sorted) {
+                let cond, act;
+                try { cond = JSON.parse(r.conditions); act = JSON.parse(r.actions); } catch { continue; }
+                if (evalConditions(p, cond)) {
+                    applyActions(p, act); r.hits++;
+                    if (cond.continue_on_match === false) break;
+                }
+            }
+            p.priority = Math.max(0, Math.min(100, p.priority));
+        }
+    }
 
-    /* ── segments (same 5 as the app) ── */
-    const SEGMENTS = [
-        { name:'Oncology — high confidence', filter:"specialty = 'oncology' AND confidence_score >= 70", fn:x => x.specialty==='oncology' && x.confidence>=70 },
-        { name:'Cardiology — engaged', filter:"specialty = 'cardiology' AND priority_score >= 60", fn:x => x.specialty==='cardiology' && x.priority>=60 },
-        { name:'Email-reachable West', filter:"consent_email = 1 AND region = 'West'", fn:x => x.consent_email===1 && x.region==='West' },
-        { name:'Power users (5+ imports)', filter:'imports_count >= 5', fn:x => x.imports_count>=5 },
-        { name:'Suppression list (Do Not Contact)', filter:"persona = 'Do Not Contact'", fn:x => x.persona==='Do Not Contact' },
-    ];
+    /* ════════ segment filter parser: field op value [AND|OR ...] (no parens) ════════ */
+    const FILTER_FIELDS = ['hcp_id','name','email','specialty','region','organization','role','consent_email','consent_web','last_activity_ts','imports_count','persona','priority_score','compliance_flag','confidence_score'];
+    function parseFilter(src) {
+        const clauseRe = /^\s*((?:custom\.)?[a-zA-Z_][a-zA-Z0-9_]*)\s*(>=|<=|!=|=|>|<)\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?)\s*/;
+        let rest = String(src).trim();
+        if (!rest) throw new Error('Filter is empty');
+        const orGroups = [[]];
+        for (;;) {
+            const m = rest.match(clauseRe);
+            if (!m) throw new Error('Cannot parse near: "' + rest.slice(0, 30) + '" — expected: field op value');
+            const [, field, op, rawVal] = m;
+            if (!field.startsWith('custom.') && !FILTER_FIELDS.includes(field)) throw new Error('Unknown field: ' + field + ' (use custom.' + field + ' for custom fields)');
+            const value = rawVal.startsWith("'") ? rawVal.slice(1, -1).replace(/''/g, "'") : Number(rawVal);
+            orGroups[orGroups.length - 1].push({ field, op, value });
+            rest = rest.slice(m[0].length);
+            if (!rest) break;
+            const conn = rest.match(/^(AND|OR)\s+/i);
+            if (!conn) throw new Error('Expected AND/OR near: "' + rest.slice(0, 30) + '"');
+            if (conn[1].toUpperCase() === 'OR') orGroups.push([]);
+            rest = rest.slice(conn[0].length);
+        }
+        return p => orGroups.some(g => g.every(c => opMatch(getFieldValue(p, c.field), c.op, c.value)));
+    }
     function segMembers(seg, mode) {
-        let m = profiles.filter(seg.fn);
+        let fn;
+        try { fn = parseFilter(seg.filter); } catch { return []; }
+        let m = state.profiles.filter(fn);
         if (mode === 'strict') m = m.filter(x => x.confidence >= 70);
-        return m.sort((a,b) => b.priority - a.priority);
+        return m.sort((a, b) => b.priority - a.priority);
     }
 
-    /* ── helpers ── */
-    const $ = s => document.querySelector(s);
-    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    function badgeConf(c) { const cls = c>=85?'b-ok':(c>=70?'b-dark':'b-warn'); return `<span class="badge ${cls}">${c}</span>`; }
-    function badgePersona(p) { return p ? `<span class="badge ${p==='Do Not Contact'?'b-warn':'b-light'}">${esc(p)}</span>` : '<span class="muted">—</span>'; }
+    /* ════════ sample rules + segments (same as the app) ════════ */
+    function sampleRules() {
+        const cutoff = NOW - 30 * 86400;
+        const J = JSON.stringify;
+        return [
+            { name:'No consent at all => Do Not Contact', priority:200, conditions:J({match:'AND',conditions:[{field:'consent_email',op:'=',value:0},{field:'consent_web',op:'=',value:0}],continue_on_match:false}), actions:J({set_persona:'Do Not Contact',set_priority_score:5,set_compliance_flag:0,add_tags:['no_consent','suppressed']}) },
+            { name:'Oncology + email consent => Oncology Engaged', priority:100, conditions:J({match:'AND',conditions:[{field:'specialty',op:'=',value:'oncology'},{field:'consent_email',op:'=',value:1}],continue_on_match:true}), actions:J({set_persona:'Oncology Engaged',add_priority_delta:15,set_compliance_flag:1,add_tags:['oncology','email_ok']}) },
+            { name:'Cardiology + email consent => Cardio Engaged', priority:95, conditions:J({match:'AND',conditions:[{field:'specialty',op:'=',value:'cardiology'},{field:'consent_email',op:'=',value:1}],continue_on_match:true}), actions:J({set_persona:'Cardio Engaged',add_priority_delta:12,set_compliance_flag:1,add_tags:['cardiology','email_ok']}) },
+            { name:'High-frequency engagers (5+ imports)', priority:80, conditions:J({match:'AND',conditions:[{field:'imports_count',op:'>=',value:5}],continue_on_match:true}), actions:J({add_priority_delta:10,add_tags:['power_user']}) },
+            { name:'Active in last 30 days => recency boost', priority:75, conditions:J({match:'AND',conditions:[{field:'last_activity_ts',op:'>=',value:cutoff}],continue_on_match:true}), actions:J({add_priority_delta:8,add_tags:['recently_active']}) },
+            { name:'KOL score 80+ (custom field) => boost', priority:70, conditions:J({match:'AND',conditions:[{field:'custom.kol_score',op:'>=',value:80}],continue_on_match:true}), actions:J({add_priority_delta:10,add_tags:['kol']}) },
+            { name:'Web-only consent => Web Reachable', priority:60, conditions:J({match:'AND',conditions:[{field:'consent_email',op:'=',value:0},{field:'consent_web',op:'=',value:1}],continue_on_match:true}), actions:J({set_persona:'Web Reachable',add_tags:['web_only']}) },
+            { name:'Advanced practice providers => APP tag', priority:55, conditions:J({match:'AND',conditions:[{field:'role',op:'in',value:['Nurse Practitioner','Physician Assistant']}],continue_on_match:true}), actions:J({add_priority_delta:5,add_tags:['advanced_practice']}) },
+            { name:'Low engagement (single import) => cooldown', priority:40, conditions:J({match:'AND',conditions:[{field:'imports_count',op:'<=',value:1}],continue_on_match:true}), actions:J({add_priority_delta:-8,add_tags:['low_engagement']}) },
+        ];
+    }
+    function sampleSegments() {
+        return [
+            { name:'Oncology — high confidence', filter:"specialty = 'oncology' AND confidence_score >= 70" },
+            { name:'Cardiology — engaged', filter:"specialty = 'cardiology' AND priority_score >= 60" },
+            { name:'Email-reachable West', filter:"consent_email = 1 AND region = 'West'" },
+            { name:'Power users (5+ imports)', filter:'imports_count >= 5' },
+            { name:'Suppression list (Do Not Contact)', filter:"persona = 'Do Not Contact'" },
+            { name:'Key opinion leaders (custom field)', filter:'custom.kol_score >= 80' },
+        ];
+    }
 
-    /* ── tabs ── */
-    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-        document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
-        t.classList.add('active');
-        $('#view-' + t.dataset.view).classList.add('active');
-    }));
+    /* ════════ state + persistence ════════ */
+    let state = { profiles: [], rules: [], segments: [], source: 'sample', fileName: '' };
+    function persist() {
+        try {
+            const slim = state.profiles.map(p => ({ hcp_id:p.hcp_id, name:p.name, email:p.email, specialty:p.imputed.specialty?null:p.specialty, region:p.imputed.region?null:p.region, organization:p.imputed.organization?null:p.organization, role:p.imputed.role?null:p.role, consent_email:p.consent_email, consent_web:p.consent_web, last_activity_ts:p.last_activity_ts, imports_count:p.imports_count, custom:p.custom }));
+            localStorage.setItem(LS_KEY, JSON.stringify({ profiles: slim, rules: state.rules.map(({hits, ...r}) => r), segments: state.segments, source: state.source, fileName: state.fileName }));
+        } catch (e) { toast('Could not persist to localStorage: ' + e.message); }
+    }
+    function loadState() {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (raw) {
+                const s = JSON.parse(raw);
+                if (Array.isArray(s.profiles) && s.profiles.length && Array.isArray(s.rules) && Array.isArray(s.segments)) {
+                    state = { profiles: s.profiles.map(makeProfile), rules: s.rules, segments: s.segments, source: s.source || 'csv', fileName: s.fileName || '' };
+                    return;
+                }
+            }
+        } catch {}
+        resetToSample(false);
+    }
+    function resetToSample(persistIt = true) {
+        state = { profiles: generateSample(), rules: sampleRules(), segments: sampleSegments(), source: 'sample', fileName: '' };
+        if (persistIt) { persist(); }
+    }
 
-    /* ── dashboard ── */
-    $('#k-profiles').textContent = profiles.length;
-    $('#k-rules').textContent = RULES.length;
-    $('#k-segments').textContent = SEGMENTS.length;
-    $('#k-priority').textContent = Math.round(profiles.reduce((a,p)=>a+p.priority,0)/profiles.length);
+    /* ════════ CSV parsing (quote-aware) ════════ */
+    function parseCSV(text) {
+        const rows = []; let row = [], cell = '', inQ = false;
+        text = text.replace(/\r\n?/g, '\n');
+        for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            if (inQ) {
+                if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else inQ = false; }
+                else cell += ch;
+            } else if (ch === '"') inQ = true;
+            else if (ch === ',') { row.push(cell); cell = ''; }
+            else if (ch === '\n') { row.push(cell); if (row.some(c => c.trim() !== '')) rows.push(row); row = []; cell = ''; }
+            else cell += ch;
+        }
+        row.push(cell);
+        if (row.some(c => c.trim() !== '')) rows.push(row);
+        if (rows.length < 2) throw new Error('Need a header row plus at least one data row.');
+        return { headers: rows[0].map(h => h.trim()), rows: rows.slice(1) };
+    }
+
+    /* ════════ import flow ════════ */
+    const INTERNAL = ['hcp_id','name','email','specialty','region','organization','role','consent_email','consent_web','last_activity_ts','imports_count'];
+    const FUZZY = { id:'hcp_id', npi:'hcp_id', full_name:'name', fullname:'name', e_mail:'email', mail:'email', state:'region', territory:'region', org:'organization', company:'organization', hospital:'organization', title:'role', opt_in_email:'consent_email', email_opt_in:'consent_email', opt_in_web:'consent_web', last_seen:'last_activity_ts', last_active:'last_activity_ts' };
+    let pendingCSV = null;
+    function showMapping(parsed, fileName) {
+        pendingCSV = parsed;
+        $('#map-stage').style.display = '';
+        $('#map-filename').textContent = fileName;
+        $('#map-rowcount').textContent = parsed.rows.length + ' data rows detected';
+        $('#import-err').textContent = ''; $('#map-err').textContent = '';
+        const used = new Set();
+        $('#map-table tbody').innerHTML = parsed.headers.map((h, i) => {
+            const norm = h.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            let auto = INTERNAL.includes(norm) ? norm : (FUZZY[norm] || '');
+            if (auto && used.has(auto)) auto = '';
+            if (auto) used.add(auto);
+            const sample = (parsed.rows[0] && parsed.rows[0][i]) || '';
+            const customName = norm || ('field_' + i);
+            const opts = ['<option value="__ignore">— ignore —</option>',
+                '<option value="__custom"' + (auto ? '' : ' selected') + '>custom field →</option>']
+                .concat(INTERNAL.map(f => `<option value="${f}"${f === auto ? ' selected' : ''}>${f}</option>`)).join('');
+            return `<tr data-col="${i}"><td class="mono">${esc(h)}</td><td class="small muted">${esc(String(sample).slice(0, 28))}</td>
+                <td><select class="map-sel">${opts}</select></td>
+                <td><input type="text" class="map-custom mono" value="${esc(customName)}" style="width:140px"></td></tr>`;
+        }).join('');
+    }
+    function runImport() {
+        if (!pendingCSV) return;
+        const mapping = {}, customMap = {};
+        document.querySelectorAll('#map-table tbody tr').forEach(tr => {
+            const col = +tr.dataset.col, sel = tr.querySelector('.map-sel').value;
+            if (sel === '__ignore') return;
+            if (sel === '__custom') {
+                let name = tr.querySelector('.map-custom').value.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
+                if (name && !INTERNAL.includes(name)) customMap[col] = name;
+            } else if (!(sel in mapping)) mapping[sel] = col;
+        });
+        if (!('hcp_id' in mapping) || !('name' in mapping)) { $('#map-err').textContent = 'Map at least hcp_id and name (any column can serve — an ID column and a name column).'; return; }
+        const profiles = [];
+        const seen = new Set();
+        for (const row of pendingCSV.rows) {
+            const src = { custom: {} };
+            for (const [f, col] of Object.entries(mapping)) src[f] = row[col];
+            for (const [col, cname] of Object.entries(customMap)) {
+                const v = String(row[col] ?? '').trim();
+                if (v !== '') src.custom[cname] = isNaN(v) ? v : Number(v);
+            }
+            const p = makeProfile(src);
+            if (!p.hcp_id || !p.name) continue;
+            if (seen.has(p.hcp_id)) continue; // upsert-by-id semantics: first occurrence wins in demo
+            seen.add(p.hcp_id);
+            profiles.push(p);
+        }
+        if (!profiles.length) { $('#map-err').textContent = 'No valid rows (every row needs hcp_id + name).'; return; }
+        state.profiles = profiles;
+        state.source = 'csv';
+        state.fileName = $('#map-filename').textContent;
+        recomputeAll(); persist(); renderAll();
+        $('#map-stage').style.display = 'none'; pendingCSV = null;
+        toast('Imported ' + profiles.length + ' profiles (' + Object.keys(customMap).length + ' custom fields)');
+        document.querySelector('[data-view="dashboard"]').click();
+    }
+
+    /* ════════ rendering ════════ */
+    function customFieldNames() {
+        const s = new Set();
+        state.profiles.forEach(p => Object.keys(p.custom).forEach(k => s.add(k)));
+        return [...s].slice(0, 4);
+    }
+    function badgeConf(c) { const cls = c >= 85 ? 'b-ok' : (c >= 70 ? 'b-dark' : 'b-warn'); return `<span class="badge ${cls}">${c}</span>`; }
+    function badgePersona(p) { return p ? `<span class="badge ${p === 'Do Not Contact' ? 'b-warn' : 'b-light'}">${esc(p)}</span>` : '<span class="muted">—</span>'; }
     function bars(el, counts, accent) {
-        const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-        const max = Math.max(...entries.map(e=>e[1]), 1);
-        el.innerHTML = entries.map(([k,v]) =>
-            `<div class="bar-row"><span class="lbl" title="${esc(k)}">${esc(k)}</span><span class="track"><span class="fill ${accent?'acc':''}" style="width:${Math.round(v/max*100)}%"></span></span><span class="n">${v}</span></div>`).join('');
+        const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12);
+        const max = Math.max(...entries.map(e => e[1]), 1);
+        el.innerHTML = entries.map(([k, v]) =>
+            `<div class="bar-row"><span class="lbl" title="${esc(k)}">${esc(k)}</span><span class="track"><span class="fill ${accent ? 'acc' : ''}" style="width:${Math.round(v / max * 100)}%"></span></span><span class="n">${v}</span></div>`).join('') || '<div class="muted small">No data.</div>';
     }
-    const personaCounts = {}; profiles.forEach(p => { const k = p.persona ?? '(no persona)'; personaCounts[k] = (personaCounts[k]||0)+1; });
-    bars($('#persona-bars'), personaCounts, true);
-    const specCounts = {}; profiles.forEach(p => { specCounts[p.specialty] = (specCounts[p.specialty]||0)+1; });
-    bars($('#specialty-bars'), specCounts, false);
-    const q = {
-        'missing email': profiles.filter(p=>!p.email).length,
-        'imputed specialty': profiles.filter(p=>p.specialty_imputed).length,
-        'imputed region': profiles.filter(p=>p.region_imputed).length,
-        'no activity data': profiles.filter(p=>!p.last_activity_ts).length,
-        'confidence < 70': profiles.filter(p=>p.confidence<70).length,
-    };
-    bars($('#quality-bars'), q, true);
+    function renderDashboard() {
+        $('#k-profiles').textContent = state.profiles.length;
+        $('#k-rules').textContent = state.rules.length;
+        $('#k-segments').textContent = state.segments.length;
+        $('#k-priority').textContent = state.profiles.length ? Math.round(state.profiles.reduce((a, p) => a + p.priority, 0) / state.profiles.length) : 0;
+        const pc = {}; state.profiles.forEach(p => { const k = p.persona ?? '(no persona)'; pc[k] = (pc[k] || 0) + 1; });
+        bars($('#persona-bars'), pc, true);
+        const sc = {}; state.profiles.forEach(p => { sc[p.specialty] = (sc[p.specialty] || 0) + 1; });
+        bars($('#specialty-bars'), sc, false);
+        const q = {
+            'missing email': state.profiles.filter(p => !p.email).length,
+            'imputed specialty': state.profiles.filter(p => p.imputed.specialty).length,
+            'imputed region': state.profiles.filter(p => p.imputed.region).length,
+            'no activity data': state.profiles.filter(p => !p.last_activity_ts).length,
+            'confidence < 70': state.profiles.filter(p => p.confidence < 70).length,
+        };
+        bars($('#quality-bars'), q, true);
+        $('#data-src').textContent = state.source === 'sample' ? 'sample · ' + state.profiles.length + ' profiles' : (state.fileName || 'your csv') + ' · ' + state.profiles.length + ' profiles';
+    }
 
-    /* ── profiles table ── */
-    const state = { search:'', specialty:'', persona:'', region:'', sort:'priority', dir:-1, page:0, per:25 };
-    function fillSelect(id, values) {
-        const sel = $(id);
-        [...new Set(values)].sort().forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; sel.appendChild(o); });
-    }
-    fillSelect('#f-specialty', profiles.map(p=>p.specialty));
-    fillSelect('#f-persona', profiles.map(p=>p.persona ?? '(no persona)'));
-    fillSelect('#f-region', profiles.map(p=>p.region));
-    function filtered() {
-        const s = state.search.toLowerCase();
-        let rows = profiles.filter(p =>
-            (!s || (p.hcp_id + ' ' + p.name + ' ' + p.organization).toLowerCase().includes(s)) &&
-            (!state.specialty || p.specialty === state.specialty) &&
-            (!state.persona || (p.persona ?? '(no persona)') === state.persona) &&
-            (!state.region || p.region === state.region));
-        const k = state.sort;
-        rows.sort((a,b) => { const av=a[k]??'', bv=b[k]??''; return (av>bv?1:av<bv?-1:0)*state.dir; });
-        return rows;
+    /* profiles table */
+    const tState = { search: '', specialty: '', persona: '', region: '', sort: 'priority', dir: -1, page: 0, per: 25 };
+    function renderProfileControls() {
+        const fill = (id, values) => {
+            const sel = $(id); const cur = sel.value;
+            sel.innerHTML = '<option value="">All</option>' + [...new Set(values)].sort().map(v => `<option${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('');
+        };
+        fill('#f-specialty', state.profiles.map(p => p.specialty));
+        fill('#f-persona', state.profiles.map(p => p.persona ?? '(no persona)'));
+        fill('#f-region', state.profiles.map(p => p.region));
     }
     function renderProfiles() {
-        const rows = filtered();
-        const pages = Math.max(1, Math.ceil(rows.length / state.per));
-        state.page = Math.min(state.page, pages - 1);
-        const slice = rows.slice(state.page*state.per, (state.page+1)*state.per);
+        const customs = customFieldNames();
+        $('#profiles-table thead tr').innerHTML =
+            `<th data-sort="hcp_id">ID</th><th data-sort="name">Name</th><th data-sort="specialty">Specialty</th><th data-sort="region">Region</th><th data-sort="organization">Organization</th>` +
+            customs.map(c => `<th class="num-right" data-sort="custom:${esc(c)}">${esc(c)} <span class="badge b-light">custom</span></th>`).join('') +
+            `<th data-sort="persona">Persona</th><th data-sort="priority" class="num-right">Priority</th><th data-sort="confidence" class="num-right">Confidence</th>`;
+        bindSort();
+        const s = tState.search.toLowerCase();
+        let rows = state.profiles.filter(p =>
+            (!s || (p.hcp_id + ' ' + p.name + ' ' + p.organization).toLowerCase().includes(s)) &&
+            (!tState.specialty || p.specialty === tState.specialty) &&
+            (!tState.persona || (p.persona ?? '(no persona)') === tState.persona) &&
+            (!tState.region || p.region === tState.region));
+        const k = tState.sort;
+        const get = p => k.startsWith('custom:') ? (p.custom[k.slice(7)] ?? '') : (p[k] ?? '');
+        rows.sort((a, b) => { const av = get(a), bv = get(b); return (av > bv ? 1 : av < bv ? -1 : 0) * tState.dir; });
+        const pages = Math.max(1, Math.ceil(rows.length / tState.per));
+        tState.page = Math.min(tState.page, pages - 1);
+        const slice = rows.slice(tState.page * tState.per, (tState.page + 1) * tState.per);
         $('#profiles-table tbody').innerHTML = slice.map(p => `<tr>
             <td class="mono">${esc(p.hcp_id)}</td><td>${esc(p.name)}</td>
-            <td>${p.specialty_imputed?`<span class="imputed">${esc(p.specialty)}</span>`:esc(p.specialty)}</td>
-            <td>${p.region_imputed?`<span class="imputed">${esc(p.region)}</span>`:esc(p.region)}</td>
-            <td>${esc(p.organization)}</td><td>${badgePersona(p.persona)}</td>
-            <td class="num-right">${p.priority}</td><td class="num-right">${badgeConf(p.confidence)}</td></tr>`).join('');
-        $('#pg-info').textContent = `${rows.length} profiles · page ${state.page+1}/${pages}`;
+            <td>${p.imputed.specialty ? `<span class="imputed">${esc(p.specialty)}</span>` : esc(p.specialty)}</td>
+            <td>${p.imputed.region ? `<span class="imputed">${esc(p.region)}</span>` : esc(p.region)}</td>
+            <td>${esc(p.organization)}</td>` +
+            customs.map(c => `<td class="num-right mono small">${esc(p.custom[c] ?? '—')}</td>`).join('') +
+            `<td>${badgePersona(p.persona)}</td>
+            <td class="num-right">${p.priority}</td><td class="num-right">${badgeConf(p.confidence)}</td></tr>`).join('') || '<tr><td colspan="12" class="muted">No matching profiles.</td></tr>';
+        $('#pg-info').textContent = `${rows.length} profiles · page ${tState.page + 1}/${pages}`;
+        $('#profiles-sub').textContent = customs.length ? `Scored and enriched. Custom fields detected: ${customs.join(', ')}. Click a column header to sort.` : 'Scored and enriched. Click a column header to sort.';
     }
-    $('#f-search').addEventListener('input', e => { state.search = e.target.value; state.page=0; renderProfiles(); });
-    ['specialty','persona','region'].forEach(k => $('#f-'+k).addEventListener('change', e => { state[k]=e.target.value; state.page=0; renderProfiles(); }));
-    document.querySelectorAll('#profiles-table th').forEach(th => th.addEventListener('click', () => {
-        const k = th.dataset.sort; if (state.sort===k) state.dir*=-1; else { state.sort=k; state.dir = (k==='priority'||k==='confidence')?-1:1; }
-        renderProfiles();
-    }));
-    $('#pg-prev').addEventListener('click', () => { state.page=Math.max(0,state.page-1); renderProfiles(); });
-    $('#pg-next').addEventListener('click', () => { state.page++; renderProfiles(); });
-    renderProfiles();
+    function bindSort() {
+        document.querySelectorAll('#profiles-table th').forEach(th => th.onclick = () => {
+            const k = th.dataset.sort; if (!k) return;
+            if (tState.sort === k) tState.dir *= -1; else { tState.sort = k; tState.dir = (k === 'priority' || k === 'confidence' || k.startsWith('custom:')) ? -1 : 1; }
+            renderProfiles();
+        });
+    }
 
-    /* ── rules table ── */
-    $('#rules-body').innerHTML = RULES.map(r => `<tr>
-        <td class="mono">${r.p}</td><td><b>${esc(r.name)}</b>${r.stop?' <span class="badge b-dark">stops chain</span>':''}</td>
-        <td class="mono small">${esc(r.condTxt)}</td><td class="mono small">${esc(r.actTxt)}</td>
-        <td class="num-right">${r.hits}</td></tr>`).join('');
+    /* rules */
+    let editingRule = -1;
+    function renderRules() {
+        $('#rules-body').innerHTML = [...state.rules].map((r, i) => ({ r, i })).sort((a, b) => b.r.priority - a.r.priority).map(({ r, i }) => {
+            let stop = false; try { stop = JSON.parse(r.conditions).continue_on_match === false; } catch {}
+            return `<tr><td class="mono">${r.priority}</td><td><b>${esc(r.name)}</b>${stop ? ' <span class="badge b-dark">stops chain</span>' : ''}</td>
+            <td class="mono small" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.conditions)}</td>
+            <td class="mono small" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.actions)}</td>
+            <td class="num-right">${r.hits ?? 0}</td>
+            <td class="num-right"><button class="btn btn-sm" data-edit-rule="${i}">Edit</button></td></tr>`;
+        }).join('');
+        document.querySelectorAll('[data-edit-rule]').forEach(b => b.onclick = () => openRuleEditor(+b.dataset.editRule));
+    }
+    function openRuleEditor(i) {
+        editingRule = i;
+        const isNew = i === -1;
+        $('#rule-ed-title').textContent = isNew ? 'New rule' : 'Edit rule';
+        const r = isNew ? { name: '', priority: 50, conditions: JSON.stringify({ match: 'AND', conditions: [{ field: 'custom.kol_score', op: '>=', value: 80 }], continue_on_match: true }, null, 2), actions: JSON.stringify({ add_priority_delta: 10, add_tags: ['kol'] }, null, 2) } : state.rules[i];
+        $('#re-name').value = r.name;
+        $('#re-priority').value = r.priority;
+        try { $('#re-cond').value = JSON.stringify(JSON.parse(r.conditions), null, 2); } catch { $('#re-cond').value = r.conditions; }
+        try { $('#re-act').value = JSON.stringify(JSON.parse(r.actions), null, 2); } catch { $('#re-act').value = r.actions; }
+        $('#rule-delete').style.display = isNew ? 'none' : '';
+        $('#rule-err').textContent = '';
+        $('#rule-editor').style.display = '';
+        $('#rule-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function saveRule() {
+        const name = $('#re-name').value.trim();
+        if (!name) { $('#rule-err').textContent = 'Name is required.'; return; }
+        let cond, act;
+        try { cond = JSON.parse($('#re-cond').value); } catch (e) { $('#rule-err').textContent = 'Conditions JSON invalid: ' + e.message; return; }
+        try { act = JSON.parse($('#re-act').value); } catch (e) { $('#rule-err').textContent = 'Actions JSON invalid: ' + e.message; return; }
+        const rule = { name, priority: parseInt($('#re-priority').value, 10) || 0, conditions: JSON.stringify(cond), actions: JSON.stringify(act) };
+        if (editingRule === -1) state.rules.push(rule); else state.rules[editingRule] = rule;
+        $('#rule-editor').style.display = 'none';
+        recomputeAll(); persist(); renderAll();
+        toast('Rules re-applied to ' + state.profiles.length + ' profiles');
+    }
 
-    /* ── segments ── */
-    let selSeg = 0;
-    function renderSegGrid() {
+    /* segments */
+    let selSeg = 0, editingSeg = -1;
+    function renderSegments() {
         const mode = $('#seg-mode').value;
-        $('#seg-grid').innerHTML = SEGMENTS.map((s,i) => `<button class="seg-cell ${i===selSeg?'sel':''}" data-i="${i}">
-            <div class="nm">${esc(s.name)}</div><div class="ct">${segMembers(s,mode).length}</div>
-            <div class="fl">${esc(s.filter)}</div></button>`).join('');
-        document.querySelectorAll('.seg-cell').forEach(b => b.addEventListener('click', () => { selSeg = +b.dataset.i; renderSegGrid(); }));
-        const members = segMembers(SEGMENTS[selSeg], mode);
-        $('#seg-body').innerHTML = members.slice(0,30).map(p => `<tr>
+        if (selSeg >= state.segments.length) selSeg = 0;
+        $('#seg-grid').innerHTML = state.segments.map((s, i) => `<button class="seg-cell ${i === selSeg ? 'sel' : ''}" data-i="${i}">
+            <span class="mini"><span class="mini-btn" data-seg-edit="${i}">edit</span></span>
+            <div class="nm">${esc(s.name)}</div><div class="ct">${segMembers(s, mode).length}</div>
+            <div class="fl">${esc(s.filter)}</div></button>`).join('') || '<div class="panel muted">No segments — create one.</div>';
+        document.querySelectorAll('.seg-cell').forEach(b => b.onclick = e => {
+            if (e.target.dataset.segEdit !== undefined) { openSegEditor(+e.target.dataset.segEdit); return; }
+            selSeg = +b.dataset.i; renderSegments();
+        });
+        const seg = state.segments[selSeg];
+        const members = seg ? segMembers(seg, mode) : [];
+        $('#seg-body').innerHTML = members.slice(0, 30).map(p => `<tr>
             <td class="mono">${esc(p.hcp_id)}</td><td>${esc(p.specialty)}</td><td>${esc(p.region)}</td>
             <td>${badgePersona(p.persona)}</td><td class="num-right">${p.priority}</td><td class="num-right">${badgeConf(p.confidence)}</td></tr>`).join('')
             || '<tr><td colspan="6" class="muted">No members under this mode.</td></tr>';
         $('#seg-note').textContent = members.length > 30 ? `Showing 30 of ${members.length} members. Export includes all.` : `${members.length} member(s).`;
+        const sim = $('#sim-segment'); const cur = sim.value;
+        sim.innerHTML = state.segments.map((s, i) => `<option value="${i}"${String(i) === cur ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
         renderSim();
     }
-    $('#seg-mode').addEventListener('change', renderSegGrid);
+    function openSegEditor(i) {
+        editingSeg = i;
+        const isNew = i === -1;
+        $('#seg-ed-title').textContent = isNew ? 'New segment' : 'Edit segment';
+        const s = isNew ? { name: '', filter: '' } : state.segments[i];
+        $('#se-name').value = s.name; $('#se-filter').value = s.filter;
+        $('#seg-delete').style.display = isNew ? 'none' : '';
+        $('#seg-err').textContent = '';
+        $('#seg-editor').style.display = '';
+    }
+    function saveSeg() {
+        const name = $('#se-name').value.trim(), filter = $('#se-filter').value.trim();
+        if (!name) { $('#seg-err').textContent = 'Name is required.'; return; }
+        try { parseFilter(filter); } catch (e) { $('#seg-err').textContent = e.message; return; }
+        const seg = { name, filter };
+        if (editingSeg === -1) { state.segments.push(seg); selSeg = state.segments.length - 1; } else state.segments[editingSeg] = seg;
+        $('#seg-editor').style.display = 'none';
+        persist(); renderSegments();
+        toast('Segment saved');
+    }
+
+    /* simulator */
+    const fmt$ = n => '$' + Math.round(n).toLocaleString('en-US');
+    function renderSim() {
+        const seg = state.segments[+$('#sim-segment').value || 0];
+        const size = seg ? segMembers(seg, $('#seg-mode').value).length : 0;
+        const cr = +$('#sim-contact').value / 100, rr = +$('#sim-response').value / 100;
+        const cpc = +$('#sim-cost').value, vpr = +$('#sim-value').value;
+        $('#o-contact').textContent = Math.round(cr * 100) + '%'; $('#o-response').textContent = Math.round(rr * 100) + '%';
+        $('#o-cost').textContent = '$' + cpc; $('#o-value').textContent = '$' + vpr;
+        const contacts = Math.round(size * cr), responses = Math.round(contacts * rr);
+        const cost = contacts * cpc, value = responses * vpr;
+        $('#s-size').textContent = size; $('#s-contacts').textContent = contacts; $('#s-responses').textContent = responses;
+        $('#s-cost').textContent = fmt$(cost); $('#s-value').textContent = fmt$(value);
+        $('#s-roi').textContent = cost > 0 ? (value / cost).toFixed(2) + '×' : '—';
+    }
+
+    function renderAll() { renderDashboard(); renderProfileControls(); renderProfiles(); renderRules(); renderSegments(); }
+
+    /* ════════ wiring ════════ */
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+        t.classList.add('active'); $('#view-' + t.dataset.view).classList.add('active');
+    }));
+    $('#f-search').addEventListener('input', e => { tState.search = e.target.value; tState.page = 0; renderProfiles(); });
+    ['specialty', 'persona', 'region'].forEach(k => $('#f-' + k).addEventListener('change', e => { tState[k] = e.target.value; tState.page = 0; renderProfiles(); }));
+    $('#pg-prev').addEventListener('click', () => { tState.page = Math.max(0, tState.page - 1); renderProfiles(); });
+    $('#pg-next').addEventListener('click', () => { tState.page++; renderProfiles(); });
+
+    $('#csv-file').addEventListener('change', e => {
+        const f = e.target.files[0]; if (!f) return;
+        f.text().then(t => { try { showMapping(parseCSV(t), f.name); } catch (err) { $('#import-err').textContent = err.message; } });
+    });
+    const dz = $('#drop-zone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('over');
+        const f = e.dataTransfer.files[0]; if (!f) return;
+        f.text().then(t => { try { showMapping(parseCSV(t), f.name); } catch (err) { $('#import-err').textContent = err.message; } });
+    });
+    $('#parse-paste').addEventListener('click', () => {
+        try { showMapping(parseCSV($('#csv-paste').value), 'pasted.csv'); } catch (err) { $('#import-err').textContent = err.message; }
+    });
+    $('#run-import').addEventListener('click', runImport);
+    $('#load-sample').addEventListener('click', () => { resetToSample(); recomputeAll(); persist(); renderAll(); toast('Sample dataset restored (200 profiles, 9 rules, 6 segments)'); });
+
+    $('#rule-new').addEventListener('click', () => openRuleEditor(-1));
+    $('#rule-save').addEventListener('click', saveRule);
+    $('#rule-cancel').addEventListener('click', () => $('#rule-editor').style.display = 'none');
+    $('#rule-delete').addEventListener('click', () => {
+        if (editingRule >= 0) { state.rules.splice(editingRule, 1); $('#rule-editor').style.display = 'none'; recomputeAll(); persist(); renderAll(); toast('Rule deleted'); }
+    });
+    $('#rules-reset').addEventListener('click', () => { state.rules = sampleRules(); recomputeAll(); persist(); renderAll(); toast('Sample rules restored'); });
+
+    $('#seg-new').addEventListener('click', () => openSegEditor(-1));
+    $('#seg-save').addEventListener('click', saveSeg);
+    $('#seg-cancel').addEventListener('click', () => $('#seg-editor').style.display = 'none');
+    $('#seg-delete').addEventListener('click', () => {
+        if (editingSeg >= 0) { state.segments.splice(editingSeg, 1); selSeg = 0; $('#seg-editor').style.display = 'none'; persist(); renderSegments(); toast('Segment deleted'); }
+    });
+    $('#seg-mode').addEventListener('change', renderSegments);
     $('#seg-export').addEventListener('click', () => {
-        const mode = $('#seg-mode').value;
-        const members = segMembers(SEGMENTS[selSeg], mode);
-        const head = 'hcp_id,specialty,region,persona,priority_score,confidence_score';
-        const csv = head + '\n' + members.map(p =>
-            [p.hcp_id, p.specialty, p.region, p.persona??'', p.priority, p.confidence]
-            .map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g,'""') + '"' : v).join(',')).join('\n');
+        const seg = state.segments[selSeg]; if (!seg) return;
+        const members = segMembers(seg, $('#seg-mode').value);
+        const customs = customFieldNames();
+        const head = ['hcp_id', 'specialty', 'region', 'persona', 'priority_score', 'confidence_score', ...customs.map(c => 'custom.' + c)];
+        const csv = head.join(',') + '\n' + members.map(p =>
+            [p.hcp_id, p.specialty, p.region, p.persona ?? '', p.priority, p.confidence, ...customs.map(c => p.custom[c] ?? '')]
+                .map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v).join(',')).join('\n');
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
         a.download = 'litehcp_demo_segment.csv';
         a.click(); URL.revokeObjectURL(a.href);
     });
+    ['sim-segment', 'sim-contact', 'sim-response', 'sim-cost', 'sim-value'].forEach(id => $('#' + id).addEventListener('input', renderSim));
 
-    /* ── simulator ── */
-    SEGMENTS.forEach((s,i) => { const o = document.createElement('option'); o.value = i; o.textContent = s.name; $('#sim-segment').appendChild(o); });
-    const fmt$ = n => '$' + Math.round(n).toLocaleString('en-US');
-    function renderSim() {
-        const segIdx = +$('#sim-segment').value || 0;
-        const size = segMembers(SEGMENTS[segIdx], $('#seg-mode').value).length;
-        const cr = +$('#sim-contact').value/100, rr = +$('#sim-response').value/100;
-        const cpc = +$('#sim-cost').value, vpr = +$('#sim-value').value;
-        $('#o-contact').textContent = Math.round(cr*100)+'%'; $('#o-response').textContent = Math.round(rr*100)+'%';
-        $('#o-cost').textContent = '$'+cpc; $('#o-value').textContent = '$'+vpr;
-        const contacts = Math.round(size*cr), responses = Math.round(contacts*rr);
-        const cost = contacts*cpc, value = responses*vpr;
-        $('#s-size').textContent = size; $('#s-contacts').textContent = contacts; $('#s-responses').textContent = responses;
-        $('#s-cost').textContent = fmt$(cost); $('#s-value').textContent = fmt$(value);
-        $('#s-roi').textContent = cost>0 ? (value/cost).toFixed(2)+'×' : '—';
-    }
-    ['sim-segment','sim-contact','sim-response','sim-cost','sim-value'].forEach(id => $('#'+id).addEventListener('input', renderSim));
-    renderSegGrid();
+    /* ════════ boot ════════ */
+    loadState();
+    recomputeAll();
+    renderAll();
     </script>
 </body>
 </html>
