@@ -1,221 +1,418 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E"
-    />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="LiteHCP Targeter is a local-first PHP + SQLite targeting tool: CSV import, rules enrichment, segmentation, simulation, and privacy-first exports — offline after setup."
-    />
-    <meta property="og:title" content="LiteHCP Targeter — Local-first targeting tool" />
-    <meta
-      property="og:description"
-      content="Local-first targeting tool for CSV import, rules enrichment, segmentation, simulation, and privacy-first exports — offline after setup."
-    />
-    <meta property="og:type" content="website" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-    <title>LiteHCP Targeter — Local-first targeting tool</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiteHCP Targeter — Self-Hosted HCP Targeting & Segmentation in One PHP File</title>
+    <meta name="description" content="Local-first HCP targeting tool: CSV import with imputation, JSON rules enrichment, segmentation, ROI simulation, and privacy-first exports. One PHP file + SQLite. Runs on any shared host. No vendor cloud, no per-seat fees.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tanzir71.github.io/litehcp_targeter/">
+    <meta property="og:title" content="LiteHCP Targeter — Self-Hosted HCP Targeting in One PHP File">
+    <meta property="og:description" content="Import CSVs, enrich with JSON rules, build segments, simulate ROI, and export privacy-first lists. One PHP file + SQLite, offline after setup.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tanzir71.github.io/litehcp_targeter/">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="LiteHCP Targeter — Self-Hosted HCP Targeting Tool">
+    <meta name="twitter:description" content="CSV import, rules enrichment, segmentation, ROI simulation, privacy-first exports. One PHP file + SQLite.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "LiteHCP Targeter",
+      "operatingSystem": "Any (PHP 8+, SQLite)",
+      "applicationCategory": "BusinessApplication",
+      "description": "Self-hosted, local-first HCP targeting and segmentation tool. CSV import with flexible mapping and imputation, JSON rules enrichment, confidence scoring, segmentation, campaign ROI simulation, and privacy-first CSV exports — all in a single PHP file with SQLite.",
+      "url": "https://tanzir71.github.io/litehcp_targeter/",
+      "softwareVersion": "1.0.0",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Person", "name": "Tanzir", "url": "https://tanziro.com" }
+    }
+    </script>
     <style>
-      *,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}.pointer-events-none{pointer-events:none}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{top:0;right:0;bottom:0;left:0}.top-0{top:0}.z-40{z-index:40}.mx-auto{margin-left:auto;margin-right:auto}.mb-3{margin-bottom:.75rem}.mb-6{margin-bottom:1.5rem}.mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-4{margin-top:1rem}.mt-7{margin-top:1.75rem}.mt-8{margin-top:2rem}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.size-9{width:2.25rem;height:2.25rem}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-9{height:2.25rem}.h-full{height:100%}.min-h-dvh{min-height:100dvh}.max-w-2xl{max-width:42rem}.max-w-6xl{max-width:72rem}.max-w-xl{max-width:36rem}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.place-items-center{place-items:center}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse: 0;border-top-width:calc(1px * calc(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px * var(--tw-divide-y-reverse))}.divide-zinc-200>:not([hidden])~:not([hidden]){--tw-divide-opacity: 1;border-color:rgb(228 228 231 / var(--tw-divide-opacity, 1))}.overflow-hidden{overflow:hidden}.text-balance{text-wrap:balance}.text-pretty{text-wrap:pretty}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-zinc-200{--tw-border-opacity: 1;border-color:rgb(228 228 231 / var(--tw-border-opacity, 1))}.border-zinc-300{--tw-border-opacity: 1;border-color:rgb(212 212 216 / var(--tw-border-opacity, 1))}.bg-white{--tw-bg-opacity: 1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/85{background-color:#ffffffd9}.bg-zinc-950{--tw-bg-opacity: 1;background-color:rgb(9 9 11 / var(--tw-bg-opacity, 1))}.bg-\[radial-gradient\(circle_at_top\,rgba\(0\,0\,0\,0\.06\)\,transparent_55\%\)\]{background-image:radial-gradient(circle at top,rgba(0,0,0,.06),transparent 55%)}.p-4{padding:1rem}.p-5{padding:1.25rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-16{padding-top:4rem;padding-bottom:4rem}.py-20{padding-top:5rem;padding-bottom:5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-base{font-size:1rem;line-height:1.5rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.text-white{--tw-text-opacity: 1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-zinc-500{--tw-text-opacity: 1;color:rgb(113 113 122 / var(--tw-text-opacity, 1))}.text-zinc-600{--tw-text-opacity: 1;color:rgb(82 82 91 / var(--tw-text-opacity, 1))}.text-zinc-700{--tw-text-opacity: 1;color:rgb(63 63 70 / var(--tw-text-opacity, 1))}.text-zinc-800{--tw-text-opacity: 1;color:rgb(39 39 42 / var(--tw-text-opacity, 1))}.text-zinc-900{--tw-text-opacity: 1;color:rgb(24 24 27 / var(--tw-text-opacity, 1))}.text-zinc-950{--tw-text-opacity: 1;color:rgb(9 9 11 / var(--tw-text-opacity, 1))}.underline-offset-4{text-underline-offset:4px}.outline-none{outline:2px solid transparent;outline-offset:2px}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur: blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-colors{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}:root{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;font-weight:400;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}html{scroll-behavior:smooth}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}.hover\:border-zinc-300:hover{--tw-border-opacity: 1;border-color:rgb(212 212 216 / var(--tw-border-opacity, 1))}.hover\:bg-zinc-50:hover{--tw-bg-opacity: 1;background-color:rgb(250 250 250 / var(--tw-bg-opacity, 1))}.hover\:bg-zinc-900:hover{--tw-bg-opacity: 1;background-color:rgb(24 24 27 / var(--tw-bg-opacity, 1))}.hover\:text-zinc-950:hover{--tw-text-opacity: 1;color:rgb(9 9 11 / var(--tw-text-opacity, 1))}.hover\:underline:hover{text-decoration-line:underline}.focus\:not-sr-only:focus{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip:auto;white-space:normal}.focus\:fixed:focus{position:fixed}.focus\:left-4:focus{left:1rem}.focus\:top-4:focus{top:1rem}.focus\:z-50:focus{z-index:50}.focus\:rounded-md:focus{border-radius:.375rem}.focus\:border:focus{border-width:1px}.focus\:border-zinc-300:focus{--tw-border-opacity: 1;border-color:rgb(212 212 216 / var(--tw-border-opacity, 1))}.focus\:bg-white:focus{--tw-bg-opacity: 1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.focus\:px-3:focus{padding-left:.75rem;padding-right:.75rem}.focus\:py-2:focus{padding-top:.5rem;padding-bottom:.5rem}.focus\:text-sm:focus{font-size:.875rem;line-height:1.25rem}.focus-visible\:ring-2:focus-visible{--tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow, 0 0 #0000)}.focus-visible\:ring-zinc-950:focus-visible{--tw-ring-opacity: 1;--tw-ring-color: rgb(9 9 11 / var(--tw-ring-opacity, 1))}.focus-visible\:ring-offset-2:focus-visible{--tw-ring-offset-width: 2px}@media(min-width:640px){.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-center{align-items:center}.sm\:justify-between{justify-content:space-between}.sm\:divide-x>:not([hidden])~:not([hidden]){--tw-divide-x-reverse: 0;border-right-width:calc(1px * var(--tw-divide-x-reverse));border-left-width:calc(1px * calc(1 - var(--tw-divide-x-reverse)))}.sm\:divide-y-0>:not([hidden])~:not([hidden]){--tw-divide-y-reverse: 0;border-top-width:calc(0px * calc(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(0px * var(--tw-divide-y-reverse))}.sm\:py-20{padding-top:5rem;padding-bottom:5rem}.sm\:py-24{padding-top:6rem;padding-bottom:6rem}.sm\:text-2xl{font-size:1.5rem;line-height:2rem}.sm\:text-5xl{font-size:3rem;line-height:1}.sm\:text-base{font-size:1rem;line-height:1.5rem}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}}@media(min-width:1024px){.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+        :root {
+            --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c;
+            --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6; --acc:#2540ff; --acc-soft:#c8d0ff;
+            --dk-bg:#0c0d0e; --dk-ink:#f4f3ee; --dk-mute:#8e8f88; --dk-rule:#232527;
+            --f-sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+            --f-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--f-sans); line-height:1.5; }
+        a { color:inherit; text-decoration:none; }
+        .container { margin:0 auto; max-width:1152px; padding:0 20px; }
+        .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0; }
+        .skip:focus { position:fixed; left:16px; top:16px; z-index:9999; width:auto; height:auto; margin:0; overflow:visible; clip:auto; white-space:normal; border:1px solid var(--fg); background:var(--bg); padding:8px 12px; font-size:14px; }
+        .mono { font-family:var(--f-mono); }
+        .eyebrow { display:inline-flex; align-items:center; gap:12px; font-family:var(--f-mono); font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted); }
+        .eyebrow::before { content:""; width:12px; height:12px; background:var(--acc); flex:none; }
+        header { position:sticky; top:0; z-index:40; border-bottom:1px solid var(--border); background:rgba(244,243,238,0.92); backdrop-filter:blur(10px); }
+        .header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; }
+        .brand { display:inline-flex; align-items:center; gap:12px; }
+        .logo { display:grid; place-items:center; width:34px; height:34px; background:var(--fg); }
+        .logo span { font-family:var(--f-mono); font-size:11px; color:var(--bg); letter-spacing:0.05em; }
+        .brand-name { font-size:14px; font-weight:600; letter-spacing:-0.02em; }
+        nav { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px; font-size:14px; }
+        .nav-link { display:inline-flex; height:36px; align-items:center; padding:0 10px; color:var(--muted); transition:background-color 120ms ease,color 120ms ease; }
+        .nav-link:hover { background:var(--bg-alt); color:var(--fg); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; height:44px; padding:0 18px; border:1px solid var(--fg); background:transparent; color:var(--fg); font-size:14px; font-weight:550; cursor:pointer; font-family:var(--f-sans); transition:background-color 120ms ease,color 120ms ease,border-color 120ms ease; }
+        .btn:hover { background:var(--fg); color:var(--bg); }
+        .btn-primary { background:var(--fg); color:var(--bg); }
+        .btn-primary:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
+        header .btn { height:40px; }
+        .hero { border-bottom:1px solid var(--border); position:relative; overflow:hidden; }
+        .hero-inner { padding:84px 0 72px; position:relative; }
+        .hero-grid { display:grid; grid-template-columns:1fr; gap:48px; align-items:start; }
+        @media (min-width:980px) { .hero-grid { grid-template-columns:minmax(0,11fr) minmax(0,9fr); } }
+        h1 { margin:22px 0 0; font-size:42px; font-weight:650; letter-spacing:-0.035em; line-height:1.04; text-wrap:balance; }
+        @media (min-width:640px) { h1 { font-size:56px; } }
+        .lead { margin-top:20px; max-width:540px; font-size:16px; line-height:1.7; color:var(--muted); text-wrap:pretty; }
+        @media (min-width:640px) { .lead { font-size:17px; } }
+        .cta-row { margin-top:30px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+        .stats { margin-top:40px; display:grid; grid-template-columns:repeat(2,1fr); border-top:1px solid var(--border); }
+        @media (min-width:640px) { .stats { grid-template-columns:repeat(4,1fr); } }
+        .stat { padding:18px 20px 14px 20px; border-right:1px solid var(--border-soft); }
+        .stat:first-child { padding-left:0; }
+        .stat:last-child { border-right:none; }
+        .stat .num { font-size:24px; font-weight:650; letter-spacing:-0.03em; }
+        .stat .lbl { margin-top:2px; font-size:11px; font-family:var(--f-mono); letter-spacing:0.08em; text-transform:uppercase; color:var(--muted-2); }
+        .snippet-card { border:1px solid var(--fg); background:var(--dk-bg); }
+        .snippet-head { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--dk-rule); }
+        .snippet-title { color:var(--dk-mute); font-size:11px; font-family:var(--f-mono); letter-spacing:0.14em; text-transform:uppercase; }
+        .snippet-body { padding:18px 16px; color:var(--dk-ink); font-size:13px; line-height:1.75; overflow-x:auto; font-family:var(--f-mono); white-space:pre; }
+        .snippet-body .a { color:#8fa3ff; }
+        .snippet-body .v { color:#c8d0ff; }
+        .snippet-body .c { color:#76776f; }
+        .section { padding:72px 0; border-bottom:1px solid var(--border); }
+        .section-head { margin-bottom:32px; }
+        .section-head .idx { font-family:var(--f-mono); font-size:12px; color:var(--faint); letter-spacing:0.18em; }
+        h2 { margin:10px 0 0; font-size:26px; font-weight:650; letter-spacing:-0.03em; line-height:1.1; }
+        @media (min-width:640px) { h2 { font-size:32px; } }
+        .sub { margin-top:10px; font-size:15px; color:var(--muted); max-width:620px; line-height:1.65; }
+        .grid { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); }
+        @media (min-width:640px) { .grid-2 { grid-template-columns:1fr 1fr; } .grid-4 { grid-template-columns:1fr 1fr; } }
+        @media (min-width:1024px) { .grid-4 { grid-template-columns:repeat(4,1fr); } .grid-3 { grid-template-columns:repeat(3,1fr); } }
+        .cell { background:var(--panel); padding:20px; transition:background-color 120ms ease; }
+        .cell:hover { background:var(--bg); }
+        h3 { margin:0; font-size:14.5px; font-weight:650; letter-spacing:-0.01em; }
+        .cell p { margin:8px 0 0; font-size:13.5px; line-height:1.6; color:var(--muted); }
+        .cell .k { display:inline-block; margin-top:12px; font-size:11px; color:var(--acc); font-family:var(--f-mono); letter-spacing:0.04em; }
+        .diagram-wrap { border:1px solid var(--border); background:var(--panel); overflow-x:auto; }
+        .diagram-wrap svg { display:block; min-width:860px; width:100%; height:auto; }
+        .diagram-steps { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); border-top:none; }
+        @media (min-width:640px) { .diagram-steps { grid-template-columns:repeat(3,1fr); } }
+        @media (min-width:1024px) { .diagram-steps { grid-template-columns:repeat(6,1fr); } }
+        .dstep { background:var(--panel); padding:16px 18px; }
+        .dstep .n { font-family:var(--f-mono); font-size:11px; color:var(--acc); letter-spacing:0.18em; }
+        .dstep .t { margin-top:6px; font-size:13.5px; font-weight:650; }
+        .dstep p { margin:6px 0 0; font-size:12.5px; color:var(--muted); line-height:1.55; }
+        .paths { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); }
+        @media (min-width:1024px) { .paths { grid-template-columns:1fr 1fr 1fr; } }
+        .path { background:var(--panel); padding:24px 22px; display:flex; flex-direction:column; min-width:0; }
+        .path-tag { align-self:flex-start; font-family:var(--f-mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; padding:4px 8px; border:1px solid var(--border); color:var(--muted-2); }
+        .path-tag.rec { background:var(--acc); border-color:var(--acc); color:#fff; }
+        .path h3 { margin-top:14px; font-size:16px; }
+        .path > p { margin:8px 0 16px; font-size:13.5px; color:var(--muted); line-height:1.6; }
+        .pre-block { background:var(--dk-bg); color:var(--dk-ink); font-family:var(--f-mono); font-size:12px; line-height:1.65; padding:14px; overflow-x:auto; white-space:pre; }
+        .pre-block .c { color:#76776f; }
+        .path .link { margin-top:auto; padding-top:16px; font-size:13px; font-weight:600; }
+        .path .link a { border-bottom:1px solid var(--acc); padding-bottom:1px; }
+        .path .link a:hover { color:var(--acc); }
+        .faq-item { border:1px solid var(--border); border-top:none; background:var(--panel); }
+        .faq-item:first-of-type { border-top:1px solid var(--border); }
+        .faq-item summary { cursor:pointer; padding:16px 20px; font-size:14.5px; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:16px; }
+        .faq-item summary::after { content:"+"; font-family:var(--f-mono); color:var(--muted-2); }
+        .faq-item[open] summary::after { content:"–"; }
+        .faq-item div { padding:0 20px 18px; font-size:13.5px; color:var(--muted); line-height:1.65; max-width:760px; }
+        .support-band { background:var(--dk-bg); color:var(--dk-ink); }
+        .support-inner { display:flex; flex-direction:column; gap:24px; padding:48px 0; }
+        @media (min-width:800px) { .support-inner { flex-direction:row; align-items:center; justify-content:space-between; } }
+        .support-inner h2 { color:var(--dk-ink); }
+        .support-inner p { color:var(--dk-mute); font-size:14.5px; max-width:520px; }
+        .support-inner .btn { border-color:var(--dk-ink); color:var(--dk-ink); }
+        .support-inner .btn:hover { background:var(--dk-ink); color:var(--dk-bg); }
+        .support-inner .btn-primary { background:var(--acc); border-color:var(--acc); color:#fff; }
+        .support-inner .btn-primary:hover { background:var(--dk-ink); border-color:var(--dk-ink); color:var(--dk-bg); }
+        footer { padding:40px 0 48px; }
+        .footer-inner { display:flex; flex-direction:column; gap:14px; justify-content:space-between; font-size:13px; color:var(--muted); }
+        @media (min-width:640px) { .footer-inner { flex-direction:row; align-items:center; } }
+        .footer-inner a { border-bottom:1px solid var(--border); padding-bottom:1px; }
+        .footer-inner a:hover { color:var(--fg); border-color:var(--acc); }
     </style>
-  </head>
-  <body>
-    <div class="min-h-dvh bg-white text-zinc-950">
-      <a
-        href="#content"
-        class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:border focus:border-zinc-300 focus:bg-white focus:px-3 focus:py-2 focus:text-sm"
-      >
-        Skip to content
-      </a>
-      <header class="sticky top-0 z-40 border-b border-zinc-200 bg-white/85 backdrop-blur">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <div class="flex items-center gap-3">
-            <div class="grid size-9 place-items-center rounded-md border border-zinc-200">
-              <span class="font-mono text-xs">LT</span>
+</head>
+<body>
+    <a href="#content" class="sr-only skip">Skip to content</a>
+    <header>
+        <div class="container header-inner">
+            <div class="brand">
+                <div class="logo"><span>HT</span></div>
+                <span class="brand-name">LiteHCP Targeter</span>
             </div>
-            <span class="text-sm font-semibold tracking-tight">LiteHCP Targeter</span>
-          </div>
-          <nav class="flex flex-wrap items-center justify-end gap-2 text-sm">
-            <a
-              href="#features"
-              class="inline-flex h-9 items-center rounded-md px-2 text-zinc-700 outline-none transition-colors hover:bg-zinc-50 hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-            >
-              Features
-            </a>
-            <a
-              href="#tech"
-              class="inline-flex h-9 items-center rounded-md px-2 text-zinc-700 outline-none transition-colors hover:bg-zinc-50 hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-            >
-              Tech
-            </a>
-            <a
-              href="#contact"
-              class="inline-flex h-9 items-center rounded-md px-2 text-zinc-700 outline-none transition-colors hover:bg-zinc-50 hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-            >
-              Contact
-            </a>
-            <a
-              href="./litehcp.php"
-              class="inline-flex h-9 items-center rounded-md bg-zinc-950 px-3 text-sm font-medium text-white outline-none transition-colors hover:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-            >
-              Open app
-            </a>
-          </nav>
+            <nav>
+                <a class="nav-link" href="#features">Features</a>
+                <a class="nav-link" href="#setup">Setup</a>
+                <a class="nav-link" href="./docs.html">Docs</a>
+                <a class="nav-link" href="./compare.html">Compare</a>
+                <a class="nav-link" href="./demo.html">Demo</a>
+                <a class="btn btn-primary" href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a>
+            </nav>
         </div>
-      </header>
-      <main id="content">
-        <section class="relative overflow-hidden">
-          <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.06),transparent_55%)]"></div>
-          <div class="mx-auto max-w-6xl px-4 py-20 sm:py-24">
-            <div class="max-w-2xl">
-              <p class="mb-3 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-700">
-                <span class="font-mono">v1</span>
-                <span>Local-first • offline after setup • no cloud required</span>
-              </p>
-              <h1 class="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">Local-first HCP targeting tool.</h1>
-              <p class="mt-4 max-w-xl text-pretty text-base leading-relaxed text-zinc-600 sm:text-lg">
-                Import CSVs, normalize + impute, enrich with rules, build segments, run a simulator, and export privacy-first lists — offline after setup.
-              </p>
-              <div class="mt-7 flex flex-wrap items-center gap-3">
-                <a
-                  href="https://github.com/tanzir71/litehcp_targeter"
-                  class="inline-flex h-11 items-center rounded-md bg-zinc-950 px-4 text-sm font-medium text-white outline-none transition-colors hover:bg-zinc-900 focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  View repo
-                </a>
-                <a
-                  href="#features"
-                  class="inline-flex h-11 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-950 outline-none transition-colors hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-                >
-                  See workflow
-                </a>
-              </div>
-              <div class="mt-8 flex flex-wrap gap-2">
-                <span class="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs text-zinc-800">Local-first</span>
-                <span class="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs text-zinc-800">Offline</span>
-                <span class="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs text-zinc-800">SQLite</span>
-                <span class="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs text-zinc-800">CSRF</span>
-                <span class="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs text-zinc-800">CSP</span>
-                <span class="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs text-zinc-800">Shared hosting</span>
-              </div>
+    </header>
+    <main id="content">
+        <section class="hero">
+            <div class="container hero-inner">
+                <div class="hero-grid">
+                    <div>
+                        <span class="eyebrow">v1.0 · self-hosted · local-first · privacy-first</span>
+                        <h1>HCP targeting that fits in one PHP file.</h1>
+                        <p class="lead">
+                            Import HCP lists from CSV, normalize and impute missing data, enrich with JSON rules,
+                            build compliant segments, simulate campaign ROI, and export privacy-first lists —
+                            on <em>your</em> server, with SQLite. No vendor cloud, no per-seat fees, offline after setup.
+                        </p>
+                        <div class="cta-row">
+                            <a class="btn btn-primary" href="./demo.html">Try the live demo</a>
+                            <a class="btn" href="#setup">Deploy it</a>
+                        </div>
+                        <div class="stats">
+                            <div class="stat"><div class="num">1</div><div class="lbl">PHP file · SQLite</div></div>
+                            <div class="stat"><div class="num">200</div><div class="lbl">profile demo dataset</div></div>
+                            <div class="stat"><div class="num">$0</div><div class="lbl">self-hosted · no fees</div></div>
+                            <div class="stat"><div class="num">0</div><div class="lbl">cloud dependencies</div></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="snippet-card">
+                            <div class="snippet-head">
+                                <span class="snippet-title">deploy · 3 steps</span>
+                            </div>
+                            <div class="snippet-body"><span class="c"># 1 — upload one file</span>
+$ <span class="a">scp</span> litehcp.php <span class="v">you@host:public_html/</span>
+
+<span class="c"># 2 — open it (PHP 8+, that's all)</span>
+$ <span class="a">open</span> <span class="v">https://your-site.com/litehcp.php</span>
+<span class="c">#   register → first user becomes admin</span>
+
+<span class="c"># 3 — see it working immediately</span>
+<span class="c">#   Dashboard → Load sample</span>
+<span class="c">#   → 200 HCP profiles, 8 rules, 5 segments</span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </section>
 
-        <section id="features" class="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div class="mb-6">
-            <h2 class="text-xl font-semibold tracking-tight sm:text-2xl">Workflow</h2>
-            <p class="mt-2 text-sm text-zinc-600 sm:text-base">Import → enrich → segment → simulate → export. All local by default.</p>
-          </div>
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300">
-              <h3 class="text-sm font-semibold tracking-tight">CSV import</h3>
-              <p class="mt-2 text-sm leading-relaxed text-zinc-600">Upload CSV, map columns, choose imputation strategies, then import in chunks.</p>
+        <section id="system" class="section">
+            <div class="container">
+                <div class="section-head">
+                    <span class="idx">SYS · 01</span>
+                    <h2>The whole pipeline, on one sheet</h2>
+                    <p class="sub">No black box. A CSV goes in one end; an audited, privacy-screened target list comes out the other. Every stage is inspectable in the UI.</p>
+                </div>
+                <div class="diagram-wrap" role="img" aria-label="Pipeline diagram: CSV import flows through mapping and imputation, rules enrichment, segmentation, simulation, and privacy-first export.">
+                    <svg viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg" font-family="JetBrains Mono, SF Mono, ui-monospace, Menlo, Consolas, monospace">
+                        <defs>
+                            <pattern id="bpgrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M40 0H0V40" fill="none" stroke="#e4e6ea" stroke-width="1"/>
+                            </pattern>
+                            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M0 0 L10 5 L0 10 Z" fill="#0a0b0d"/>
+                            </marker>
+                        </defs>
+                        <rect width="1200" height="300" fill="#fbfaf6"/>
+                        <rect width="1200" height="300" fill="url(#bpgrid)"/>
+                        <g stroke="#9aa0ac" stroke-width="1.5">
+                            <path d="M24 16v16M16 24h16"/><path d="M1176 16v16M1168 24h16"/>
+                            <path d="M24 268v16M16 276h16"/><path d="M1176 268v16M1168 276h16"/>
+                        </g>
+                        <text x="46" y="28" font-size="10" letter-spacing="2" fill="#9aa0ac">HT/SYS·01</text>
+                        <text x="1154" y="28" font-size="10" letter-spacing="2" fill="#9aa0ac" text-anchor="end">SINGLE FILE · SQLITE</text>
+                        <text x="46" y="281" font-size="10" letter-spacing="2" fill="#9aa0ac">LOCAL-FIRST</text>
+                        <text x="1154" y="281" font-size="10" letter-spacing="2" fill="#9aa0ac" text-anchor="end">NO CLOUD IN LOOP</text>
+                        <g font-size="12" fill="#0a0a0a">
+                            <g>
+                                <rect x="60" y="110" width="150" height="80" fill="#fff" stroke="#0a0b0d" stroke-width="1.5"/>
+                                <text x="135" y="142" text-anchor="middle" font-weight="bold">CSV IN</text>
+                                <text x="135" y="162" text-anchor="middle" font-size="10" fill="#6b6b66">any column layout</text>
+                            </g>
+                            <g>
+                                <rect x="250" y="110" width="150" height="80" fill="#fff" stroke="#0a0b0d" stroke-width="1.5"/>
+                                <text x="325" y="136" text-anchor="middle" font-weight="bold">MAP + IMPUTE</text>
+                                <text x="325" y="156" text-anchor="middle" font-size="10" fill="#6b6b66">fixed · mode · mean</text>
+                                <text x="325" y="170" text-anchor="middle" font-size="10" fill="#2540ff">confidence 0–100</text>
+                            </g>
+                            <g>
+                                <rect x="440" y="110" width="150" height="80" fill="#fff" stroke="#0a0b0d" stroke-width="1.5"/>
+                                <text x="515" y="136" text-anchor="middle" font-weight="bold">RULES</text>
+                                <text x="515" y="156" text-anchor="middle" font-size="10" fill="#6b6b66">JSON conditions</text>
+                                <text x="515" y="170" text-anchor="middle" font-size="10" fill="#2540ff">personas · tags · score</text>
+                            </g>
+                            <g>
+                                <rect x="630" y="110" width="150" height="80" fill="#fff" stroke="#0a0b0d" stroke-width="1.5"/>
+                                <text x="705" y="136" text-anchor="middle" font-weight="bold">SEGMENTS</text>
+                                <text x="705" y="156" text-anchor="middle" font-size="10" fill="#6b6b66">safe SQL filters</text>
+                                <text x="705" y="170" text-anchor="middle" font-size="10" fill="#2540ff">strict / inclusive</text>
+                            </g>
+                            <g>
+                                <rect x="820" y="110" width="150" height="80" fill="#fff" stroke="#0a0b0d" stroke-width="1.5"/>
+                                <text x="895" y="136" text-anchor="middle" font-weight="bold">SIMULATE</text>
+                                <text x="895" y="156" text-anchor="middle" font-size="10" fill="#6b6b66">reach · response</text>
+                                <text x="895" y="170" text-anchor="middle" font-size="10" fill="#2540ff">cost · ROI</text>
+                            </g>
+                            <g>
+                                <rect x="1010" y="110" width="130" height="80" fill="#0c0d0e" stroke="#0a0b0d" stroke-width="1.5"/>
+                                <text x="1075" y="142" text-anchor="middle" font-weight="bold" fill="#f4f3ee">EXPORT</text>
+                                <text x="1075" y="162" text-anchor="middle" font-size="10" fill="#8e8f88">PII off by default</text>
+                            </g>
+                        </g>
+                        <g stroke="#0a0b0d" stroke-width="1.5" marker-end="url(#arr)">
+                            <path d="M210 150h32"/><path d="M400 150h32"/><path d="M590 150h32"/><path d="M780 150h32"/><path d="M970 150h32"/>
+                        </g>
+                        <text x="600" y="70" text-anchor="middle" font-size="11" letter-spacing="3" fill="#6b6b66">EVERY STAGE AUDITED IN audit_log</text>
+                    </svg>
+                </div>
+                <div class="diagram-steps">
+                    <div class="dstep"><div class="n">01</div><div class="t">Import</div><p>Upload any CSV. Preview rows, map columns to internal fields with flexible matching.</p></div>
+                    <div class="dstep"><div class="n">02</div><div class="t">Impute</div><p>Fill gaps per field — fixed value, mode, mean, or leave-null-and-flag. Imputed values stay marked.</p></div>
+                    <div class="dstep"><div class="n">03</div><div class="t">Enrich</div><p>JSON rules assign personas, tags, compliance flags, and priority deltas — in priority order.</p></div>
+                    <div class="dstep"><div class="n">04</div><div class="t">Segment</div><p>Allowlist-validated SQL-like filters or rule-trace matching, with a strict confidence mode.</p></div>
+                    <div class="dstep"><div class="n">05</div><div class="t">Simulate</div><p>Project contacts, responses, cost, and ROI from segment size before you spend anything.</p></div>
+                    <div class="dstep"><div class="n">06</div><div class="t">Export</div><p>CSV out with minimal fields by default. PII requires an admin toggle and is always audited.</p></div>
+                </div>
             </div>
-            <div class="rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300">
-              <h3 class="text-sm font-semibold tracking-tight">Rules enrichment</h3>
-              <p class="mt-2 text-sm leading-relaxed text-zinc-600">Apply JSON rules to generate persona, priority score, compliance flag, and tags.</p>
-            </div>
-            <div class="rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300">
-              <h3 class="text-sm font-semibold tracking-tight">Segments</h3>
-              <p class="mt-2 text-sm leading-relaxed text-zinc-600">Build segments from rules or safe SQL-like filters (allowlisted fields only).</p>
-            </div>
-            <div class="rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300">
-              <h3 class="text-sm font-semibold tracking-tight">Simulator + export</h3>
-              <p class="mt-2 text-sm leading-relaxed text-zinc-600">Project contacts/cost/ROI and export privacy-first CSV lists (PII gated by admin).</p>
-            </div>
-          </div>
         </section>
 
-        <section id="tech" class="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div class="mb-6">
-            <h2 class="text-xl font-semibold tracking-tight sm:text-2xl">Stack</h2>
-            <p class="mt-2 text-sm text-zinc-600 sm:text-base">Single-file PHP app optimized for shared hosting (offline after setup).</p>
-          </div>
-          <div class="rounded-lg border border-zinc-200 bg-white">
-            <dl class="grid grid-cols-1 divide-y divide-zinc-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-              <div class="p-4">
-                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-500">App</dt>
-                <dd class="mt-2 font-mono text-sm text-zinc-900">PHP 8+ (single-file)</dd>
-              </div>
-              <div class="p-4">
-                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-500">Database</dt>
-                <dd class="mt-2 font-mono text-sm text-zinc-900">PDO + SQLite (WAL)</dd>
-              </div>
-              <div class="p-4">
-                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-500">Security</dt>
-                <dd class="mt-2 font-mono text-sm text-zinc-900">CSRF + CSP + rate limiting</dd>
-              </div>
-              <div class="p-4">
-                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-500">Deploy</dt>
-                <dd class="mt-2 font-mono text-sm text-zinc-900">cPanel / Namecheap</dd>
-              </div>
-            </dl>
-          </div>
+        <section id="features" class="section">
+            <div class="container">
+                <div class="section-head">
+                    <span class="idx">FTR · 02</span>
+                    <h2>Everything a targeting workflow needs</h2>
+                    <p class="sub">Built for pharma and health marketing-ops teams who need segmentation discipline without an enterprise procurement cycle.</p>
+                </div>
+                <div class="grid grid-4">
+                    <div class="cell"><h3>CSV import + flexible mapping</h3><p>Any column layout. Preview, map to internal fields, and re-import safely — profiles upsert by HCP ID.</p><span class="k">import → map → run</span></div>
+                    <div class="cell"><h3>Imputation engine</h3><p>Per-field strategies: fixed, mode, mean, or leave-null-and-flag. Imputed values are visibly dotted in the UI.</p><span class="k">no silent guessing</span></div>
+                    <div class="cell"><h3>Confidence scoring</h3><p>Every profile gets a 0–100 confidence score from completeness, mapping coverage, and imputation penalties.</p><span class="k">confidence_score</span></div>
+                    <div class="cell"><h3>JSON rules enrichment</h3><p>Priority-ordered rules set personas, tags, compliance flags, and score deltas. Test any rule against live data.</p><span class="k">8 sample rules included</span></div>
+                    <div class="cell"><h3>Segmentation</h3><p>Safe, allowlist-validated SQL-like filters or applied-rule matching. Preview counts before export.</p><span class="k">strict / inclusive modes</span></div>
+                    <div class="cell"><h3>Campaign simulator</h3><p>Contact rate, response rate, cost per contact, value per response — projected ROI before any spend.</p><span class="k">audited runs</span></div>
+                    <div class="cell"><h3>Privacy-first exports</h3><p>Minimal fields by default — no email, no name. PII export is an admin toggle, and every export is logged.</p><span class="k">GDPR-friendly default</span></div>
+                    <div class="cell"><h3>Hardened by default</h3><p>CSRF tokens, CSP + security headers, rate limiting, prepared statements, upload validation, audit log.</p><span class="k">see SECURITY.md</span></div>
+                </div>
+            </div>
         </section>
 
-        <section id="contact" class="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div class="mb-6">
-            <h2 class="text-xl font-semibold tracking-tight sm:text-2xl">Get involved</h2>
-            <p class="mt-2 text-sm text-zinc-600 sm:text-base">Ship the MVP, then iterate with users.</p>
-          </div>
-          <div class="flex flex-col items-start justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-5 sm:flex-row sm:items-center">
+        <section id="setup" class="section">
+            <div class="container">
+                <div class="section-head">
+                    <span class="idx">SET · 03</span>
+                    <h2>Three ways in</h2>
+                    <p class="sub">Shared hosting is the home turf — cPanel, Namecheap, any host with PHP 8. No composer, no build step, no database server.</p>
+                </div>
+                <div class="paths">
+                    <div class="path">
+                        <span class="path-tag">no install</span>
+                        <h3>Try the demo</h3>
+                        <p>A full client-side simulation of the app — dashboard, profiles, segments, and the ROI simulator — preloaded with the 200-profile dataset.</p>
+                        <div class="pre-block"><span class="c"># nothing to set up</span>
+open ./demo.html</div>
+                        <div class="link"><a href="./demo.html">Open the demo →</a></div>
+                    </div>
+                    <div class="path">
+                        <span class="path-tag rec">recommended</span>
+                        <h3>Shared hosting (cPanel)</h3>
+                        <p>Upload one file, set PHP 8+ in MultiPHP Manager, and visit it. SQLite and the uploads folder are created automatically.</p>
+                        <div class="pre-block">public_html/
+└── litehcp.php        <span class="c"># the entire app</span>
+
+<span class="c"># created on first run:</span>
+├── litehcp.db         <span class="c"># SQLite database</span>
+└── litehcp_uploads/   <span class="c"># CSVs + logs (denied to web)</span></div>
+                        <div class="link"><a href="./docs.html#deploy">Full deploy guide →</a></div>
+                    </div>
+                    <div class="path">
+                        <span class="path-tag">local / dev</span>
+                        <h3>Run it locally</h3>
+                        <p>Any machine with PHP 8 can run it with the built-in server. Perfect for evaluating with your own CSVs before deploying.</p>
+                        <div class="pre-block">$ git clone github.com/tanzir71/litehcp_targeter
+$ cd litehcp_targeter
+$ php -S localhost:8000
+<span class="c"># → http://localhost:8000/litehcp.php</span></div>
+                        <div class="link"><a href="./docs.html#local">Local setup notes →</a></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="privacy" class="section">
+            <div class="container">
+                <div class="section-head">
+                    <span class="idx">PRV · 04</span>
+                    <h2>Privacy is the default, not a setting</h2>
+                    <p class="sub">HCP data is regulated data. LiteHCP is built so the safe path is also the easy path.</p>
+                </div>
+                <div class="grid grid-3">
+                    <div class="cell"><h3>Your server, your data</h3><p>Everything lives in a SQLite file next to the app. Nothing is sent to a vendor cloud — there is no vendor cloud.</p><span class="k">sqlite:./litehcp.db</span></div>
+                    <div class="cell"><h3>Minimal exports by default</h3><p>Segment exports ship hcp_id, specialty, region, persona, and scores — never email or name unless an admin explicitly enables PII export.</p><span class="k">export_pii: OFF</span></div>
+                    <div class="cell"><h3>Everything audited</h3><p>Logins, imports, rule changes, exports, simulations, and settings changes all land in an append-only audit log.</p><span class="k">audit_log</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="faq" class="section">
+            <div class="container">
+                <div class="section-head">
+                    <span class="idx">FAQ · 05</span>
+                    <h2>Questions, answered</h2>
+                </div>
+                <details class="faq-item"><summary>Does any data leave my server?</summary><div>No. The app is a single PHP file using a local SQLite database. There are no analytics, no phone-home, and no external APIs in the data path. The only external requests are optional Google Fonts in the UI, which you can remove for fully offline use.</div></details>
+                <details class="faq-item"><summary>What do I need to run it?</summary><div>PHP 8.0+ with PDO and SQLite enabled (standard on virtually all shared hosting), plus write permission in the app folder. That's the entire requirements list — no MySQL, no composer, no Node.</div></details>
+                <details class="faq-item"><summary>Can it handle large HCP lists?</summary><div>Imports run in chunks (200 rows per batch by default) with an auto-reload "run until done" mode, and a cron endpoint recomputes scores and rules in batches for large datasets. SQLite comfortably handles hundreds of thousands of profiles for this workload.</div></details>
+                <details class="faq-item"><summary>How do the targeting rules work?</summary><div>Rules are JSON: a condition tree (AND/OR, operators like =, &gt;=, in, contains, regex) plus actions (set persona, add tags, set compliance flag, adjust priority score). Rules evaluate in priority order, and each profile keeps a trace of which rules fired — segments can target by that trace.</div></details>
+                <details class="faq-item"><summary>Is the scoring configurable?</summary><div>Yes. Priority weights (consent / recency / engagement), the recency window, confidence penalties, imputation defaults, export field allowlists, and rate limits are all in a clearly-marked config block at the top of the file, with a few common settings overridable via <span class="mono">.env</span>.</div></details>
+                <details class="faq-item"><summary>What does it cost?</summary><div>Nothing to deploy — it runs on infrastructure you already have. There are no per-seat licenses, no usage fees, and no contracts. The source is on GitHub.</div></details>
+            </div>
+        </section>
+
+        <section class="support-band">
+            <div class="container support-inner">
+                <div>
+                    <span class="eyebrow" style="color:var(--dk-mute)">READY IN MINUTES</span>
+                    <h2 style="margin-top:14px">Upload one file. Load the sample. See your pipeline.</h2>
+                    <p>The embedded demo dataset — 200 profiles, 8 rules, 5 segments — means the app demonstrates itself before you import a single real record.</p>
+                </div>
+                <div class="cta-row">
+                    <a class="btn btn-primary" href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">Get the file</a>
+                    <a class="btn" href="./demo.html">Try the demo first</a>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div class="container footer-inner">
+            <div>LiteHCP Targeter — self-hosted HCP targeting · built by <a href="https://tanziro.com" target="_blank" rel="noopener">Tanzir</a></div>
             <div>
-              <p class="text-sm font-medium">Want this on your machine?</p>
-              <p class="mt-1 text-sm text-zinc-600">Open an issue with your deployment constraints and data workflow.</p>
+                <a href="./docs.html">Docs</a> ·
+                <a href="./compare.html">Compare</a> ·
+                <a href="./demo.html">Demo</a> ·
+                <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a>
             </div>
-            <a
-              href="https://github.com/tanzir71/litehcp_targeter/issues"
-              class="inline-flex h-10 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-950 outline-none transition-colors hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-              rel="noreferrer"
-              target="_blank"
-            >
-              Open an issue
-            </a>
-          </div>
-        </section>
-      </main>
-
-      <footer class="border-t border-zinc-200">
-        <div class="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-xs text-zinc-500">Vibe-coded with ♥ by tanziro.com</p>
-          <div class="flex flex-wrap items-center gap-3 text-xs">
-            <a
-              href="https://github.com/tanzir71/litehcp_targeter"
-              class="text-zinc-600 underline-offset-4 hover:text-zinc-950 hover:underline"
-              rel="noreferrer"
-              target="_blank"
-            >
-              GitHub
-            </a>
-            <a
-              href="https://github.com/tanzir71/litehcp_targeter/blob/main/SETUP.md"
-              class="text-zinc-600 underline-offset-4 hover:text-zinc-950 hover:underline"
-              rel="noreferrer"
-              target="_blank"
-            >
-              SETUP
-            </a>
-            <a
-              href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md"
-              class="text-zinc-600 underline-offset-4 hover:text-zinc-950 hover:underline"
-              rel="noreferrer"
-              target="_blank"
-            >
-              SECURITY
-            </a>
-          </div>
         </div>
-      </footer>
-    </div>
-  </body>
+    </footer>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type":"Question","name":"Does any data leave my server?","acceptedAnswer":{"@type":"Answer","text":"No. The app is a single PHP file using a local SQLite database. There are no analytics, no phone-home, and no external APIs in the data path."}},
+        {"@type":"Question","name":"What do I need to run LiteHCP Targeter?","acceptedAnswer":{"@type":"Answer","text":"PHP 8.0+ with PDO and SQLite enabled, plus write permission in the app folder. No MySQL, no composer, no Node."}},
+        {"@type":"Question","name":"Can it handle large HCP lists?","acceptedAnswer":{"@type":"Answer","text":"Imports run in chunks with an auto-reload mode, and a cron endpoint recomputes scores and rules in batches. SQLite comfortably handles hundreds of thousands of profiles for this workload."}},
+        {"@type":"Question","name":"What does it cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing to deploy — it runs on infrastructure you already have. No per-seat licenses, usage fees, or contracts."}}
+      ]
+    }
+    </script>
+</body>
 </html>

@@ -3,3 +3,6 @@ litehcp.db
 litehcp_uploads/
 .DS_Store
 Thumbs.db
+
+# Reference material (not part of the project)
+ref_*/

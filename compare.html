@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiteHCP Targeter vs. Enterprise HCP Targeting Platforms — Honest Comparison</title>
+    <meta name="description" content="How LiteHCP Targeter compares to enterprise life-sciences CRM and HCP engagement platforms like Veeva CRM, Salesforce Life Sciences Cloud, and IQVIA OCE — and when each is the right choice.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tanzir71.github.io/litehcp_targeter/compare.html">
+    <meta property="og:title" content="LiteHCP Targeter vs. Enterprise HCP Platforms">
+    <meta property="og:description" content="An honest comparison: when a single-file, self-hosted targeting tool is enough — and when you need the enterprise suite.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c;
+            --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6; --acc:#2540ff;
+            --dk-bg:#0c0d0e; --dk-ink:#f4f3ee; --dk-mute:#8e8f88;
+            --f-sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+            --f-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+        }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--f-sans); font-size:14.5px; line-height:1.65; }
+        a { color:inherit; text-decoration:none; }
+        .container { margin:0 auto; max-width:1152px; padding:0 20px; }
+        .mono { font-family:var(--f-mono); }
+        header { position:sticky; top:0; z-index:40; border-bottom:1px solid var(--border); background:rgba(244,243,238,0.92); backdrop-filter:blur(10px); }
+        .header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; }
+        .brand { display:inline-flex; align-items:center; gap:12px; }
+        .logo { display:grid; place-items:center; width:34px; height:34px; background:var(--fg); }
+        .logo span { font-family:var(--f-mono); font-size:11px; color:var(--bg); letter-spacing:0.05em; }
+        .brand-name { font-size:14px; font-weight:600; letter-spacing:-0.02em; }
+        nav { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px; font-size:14px; }
+        .nav-link { display:inline-flex; height:36px; align-items:center; padding:0 10px; color:var(--muted); }
+        .nav-link:hover { background:var(--bg-alt); color:var(--fg); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 18px; border:1px solid var(--fg); background:var(--fg); color:var(--bg); font-size:14px; font-weight:550; }
+        .btn:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
+        .eyebrow { display:inline-flex; align-items:center; gap:12px; font-family:var(--f-mono); font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted); }
+        .eyebrow::before { content:""; width:12px; height:12px; background:var(--acc); flex:none; }
+        .hero { padding:64px 0 40px; border-bottom:1px solid var(--border); }
+        h1 { margin:18px 0 0; font-size:36px; font-weight:650; letter-spacing:-0.035em; line-height:1.08; max-width:780px; text-wrap:balance; }
+        @media (min-width:640px) { h1 { font-size:44px; } }
+        .lead { margin-top:16px; color:var(--muted); max-width:680px; font-size:16px; line-height:1.7; }
+        .section { padding:56px 0; border-bottom:1px solid var(--border); }
+        h2 { font-size:26px; font-weight:650; letter-spacing:-0.03em; margin:0 0 8px; }
+        .sub { color:var(--muted); max-width:640px; margin:0 0 24px; }
+        .tbl-wrap { overflow-x:auto; border:1px solid var(--border); background:var(--panel); }
+        table { width:100%; border-collapse:collapse; font-size:13.5px; min-width:760px; }
+        th { font-family:var(--f-mono); font-size:10.5px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted-2); text-align:left; padding:12px 14px; border-bottom:1px solid var(--fg); }
+        th.hl { color:var(--acc); }
+        td { padding:11px 14px; border-bottom:1px solid var(--border-soft); vertical-align:top; }
+        td.hl { background:#fff; }
+        td b { font-weight:650; }
+        .yes { color:var(--acc); font-weight:650; }
+        .meh { color:var(--muted-2); }
+        .grid { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); }
+        @media (min-width:900px) { .grid-2 { grid-template-columns:1fr 1fr; } }
+        .cell { background:var(--panel); padding:22px; }
+        .cell h3 { margin:0 0 8px; font-size:16px; font-weight:650; }
+        .cell p, .cell li { font-size:13.5px; color:var(--muted); line-height:1.65; }
+        .cell ul { margin:8px 0 0; padding-left:20px; }
+        .cell .tag { display:inline-block; margin-bottom:10px; font-family:var(--f-mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; padding:4px 8px; border:1px solid var(--border); color:var(--muted-2); }
+        .cell .tag.acc { background:var(--acc); border-color:var(--acc); color:#fff; }
+        .cta-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+        .btn-lg { height:44px; }
+        .btn-ghost { background:transparent; color:var(--fg); }
+        .btn-ghost:hover { background:var(--fg); color:var(--bg); }
+        footer { padding:24px 0 40px; font-size:13px; color:var(--muted); }
+        footer a { border-bottom:1px solid var(--border); }
+        footer a:hover { color:var(--fg); border-color:var(--acc); }
+        .disclaimer { font-size:12px; color:var(--muted-2); max-width:760px; margin-top:18px; line-height:1.6; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-inner">
+            <a class="brand" href="./index.html">
+                <div class="logo"><span>HT</span></div>
+                <span class="brand-name">LiteHCP Targeter</span>
+            </a>
+            <nav>
+                <a class="nav-link" href="./index.html">Home</a>
+                <a class="nav-link" href="./docs.html">Docs</a>
+                <a class="nav-link" href="./demo.html">Demo</a>
+                <a class="btn" href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="hero">
+            <div class="container">
+                <span class="eyebrow">Honest comparison</span>
+                <h1>You probably don't need an enterprise suite to build a target list.</h1>
+                <p class="lead">Platforms like Veeva CRM, Salesforce Life Sciences Cloud, and IQVIA OCE are excellent at what they do — running the entire commercial operation of a life-sciences company. LiteHCP Targeter does one slice of that job: turning HCP CSVs into scored, compliant, exportable segments. If that slice is all you need, the difference in cost and complexity is enormous.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <h2>Side by side</h2>
+                <p class="sub">Indicative comparison for the <b>targeting & segmentation workflow specifically</b> — not the platforms' full feature sets.</p>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th class="hl">LiteHCP Targeter</th>
+                                <th>Veeva CRM / OpenData</th>
+                                <th>Salesforce Life Sciences Cloud</th>
+                                <th>IQVIA OCE / OneKey</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><b>Scope</b></td><td class="hl">CSV → segments → export</td><td class="meh">Full commercial CRM + HCP data</td><td class="meh">Full CRM platform for life sciences</td><td class="meh">Omnichannel engagement + HCP data</td></tr>
+                            <tr><td><b>Pricing model</b></td><td class="hl"><span class="yes">$0 — self-hosted</span></td><td class="meh">Enterprise contract, per-seat</td><td class="meh">Enterprise contract, per-seat</td><td class="meh">Enterprise contract</td></tr>
+                            <tr><td><b>Time to first segment</b></td><td class="hl"><span class="yes">Minutes</span></td><td class="meh">Weeks–months (implementation)</td><td class="meh">Weeks–months (implementation)</td><td class="meh">Weeks–months (implementation)</td></tr>
+                            <tr><td><b>Where data lives</b></td><td class="hl"><span class="yes">Your server (SQLite)</span></td><td class="meh">Vendor cloud</td><td class="meh">Vendor cloud</td><td class="meh">Vendor cloud</td></tr>
+                            <tr><td><b>Infrastructure needed</b></td><td class="hl">Any PHP 8 host</td><td class="meh">SaaS subscription + admin team</td><td class="meh">SaaS subscription + admin team</td><td class="meh">SaaS subscription + admin team</td></tr>
+                            <tr><td><b>Rules-based enrichment</b></td><td class="hl"><span class="yes">Yes — JSON rules, testable</span></td><td>Yes (platform tooling)</td><td>Yes (platform tooling)</td><td>Yes (platform tooling)</td></tr>
+                            <tr><td><b>Privacy-first exports</b></td><td class="hl"><span class="yes">Default — PII gated + audited</span></td><td>Configurable, admin-dependent</td><td>Configurable, admin-dependent</td><td>Configurable, admin-dependent</td></tr>
+                            <tr><td><b>Verified HCP reference data</b></td><td class="meh">No — bring your own lists</td><td><span class="yes">Yes (OpenData)</span></td><td class="meh">Via partners</td><td><span class="yes">Yes (OneKey)</span></td></tr>
+                            <tr><td><b>Field-team / rep workflows</b></td><td class="meh">No</td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td></tr>
+                            <tr><td><b>Email/omnichannel execution</b></td><td class="meh">No — exports feed your tools</td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td></tr>
+                            <tr><td><b>Source auditable</b></td><td class="hl"><span class="yes">Yes — one readable PHP file</span></td><td class="meh">No</td><td class="meh">No</td><td class="meh">No</td></tr>
+                            <tr><td><b>Works offline / air-gapped</b></td><td class="hl"><span class="yes">Yes, after setup</span></td><td class="meh">No</td><td class="meh">No</td><td class="meh">No</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="disclaimer">Vendor capabilities summarized at a high level from publicly available product descriptions and are indicative, not exhaustive; enterprise platforms vary by edition, configuration, and contract. Veeva, Salesforce, and IQVIA are trademarks of their respective owners; LiteHCP Targeter is not affiliated with or endorsed by any of them.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <h2>Which one is right for you?</h2>
+                <div class="grid grid-2" style="margin-top:24px">
+                    <div class="cell">
+                        <span class="tag acc">Choose LiteHCP Targeter</span>
+                        <h3>You need clean segments, not a platform</h3>
+                        <ul>
+                            <li>Your HCP data arrives as CSVs from conferences, partners, data vendors, or your own systems.</li>
+                            <li>You're a small team, agency, or regional affiliate without enterprise CRM budget or admins.</li>
+                            <li>Data residency matters — you want HCP data on infrastructure you control.</li>
+                            <li>You want export discipline: minimal fields by default, PII gated and audited.</li>
+                            <li>You need it working this week, on hosting you already pay for.</li>
+                        </ul>
+                    </div>
+                    <div class="cell">
+                        <span class="tag">Choose an enterprise platform</span>
+                        <h3>You're running the whole commercial engine</h3>
+                        <ul>
+                            <li>You need verified HCP reference data (Veeva OpenData, IQVIA OneKey) kept current at scale.</li>
+                            <li>Field reps need call planning, sampling, and territory management.</li>
+                            <li>You execute email and omnichannel campaigns inside the same system.</li>
+                            <li>You have compliance requirements that mandate a specific validated vendor stack.</li>
+                            <li>You have the budget, admins, and implementation timeline to match.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="cta-row">
+                    <a class="btn btn-lg" href="./demo.html">Try the LiteHCP demo</a>
+                    <a class="btn btn-lg btn-ghost" style="background:transparent;color:var(--fg)" href="./docs.html">Read the docs</a>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div class="container" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
+            <div>LiteHCP Targeter — built by <a href="https://tanziro.com" target="_blank" rel="noopener">Tanzir</a></div>
+            <div><a href="./index.html">Home</a> · <a href="./docs.html">Docs</a> · <a href="./demo.html">Demo</a> · <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></div>
+        </div>
+    </footer>
+</body>
+</html>

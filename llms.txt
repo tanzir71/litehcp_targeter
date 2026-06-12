@@ -1,0 +1,18 @@
+# LiteHCP Targeter
+
+> Self-hosted, local-first HCP (healthcare professional) targeting and segmentation tool. A single PHP 8 file with SQLite: CSV import with flexible mapping and imputation, priority + confidence scoring, JSON rules enrichment (personas, tags, compliance flags), allowlist-validated segment filters, a campaign ROI simulator, and privacy-first CSV exports (PII gated behind an audited admin toggle). Designed for shared hosting (cPanel/Namecheap); no vendor cloud, no per-seat fees, offline after setup.
+
+Key facts:
+- Deployment: upload `litehcp.php` to any PHP 8+ host; SQLite schema auto-creates on first load; first registered user becomes admin.
+- Demo data: Dashboard → "Load sample" imports 200 realistic HCP profiles, 8 enrichment rules, and 5 segments.
+- Security: CSRF on all POSTs, nonce-based CSP, rate limiting, prepared statements, upload validation, append-only audit log.
+- Privacy: default exports contain no email/name; PII export requires an admin setting and is audited per export.
+- Scale: chunked imports and a token-protected cron endpoint for batch recompute.
+
+## Docs
+
+- [Landing page](https://tanzir71.github.io/litehcp_targeter/): overview, features, setup paths, FAQ
+- [Documentation](https://tanzir71.github.io/litehcp_targeter/docs.html): deploy, configuration, rules JSON reference, segments, exports, security
+- [Comparison](https://tanzir71.github.io/litehcp_targeter/compare.html): vs. Veeva CRM, Salesforce Life Sciences Cloud, IQVIA OCE
+- [Live demo](https://tanzir71.github.io/litehcp_targeter/demo.html): in-browser simulation with the full sample dataset
+- [Repository](https://github.com/tanzir71/litehcp_targeter): source code, SETUP.md, SECURITY.md

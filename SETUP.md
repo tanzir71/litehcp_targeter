@@ -25,7 +25,7 @@ Create a `.env` file next to `litehcp.php` (do not commit it):
 
 ```ini
 CRON_TOKEN="change-this-long-random-token"
-ACCENT_COLOR="#1A73E8"
+ACCENT_COLOR="#2540FF"
 SESSION_TIMEOUT_SECONDS="1800"
 UPLOAD_MAX_BYTES="5242880"
 ```

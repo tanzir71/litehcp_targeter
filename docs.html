@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation — LiteHCP Targeter</title>
+    <meta name="description" content="Deploy, configure, and operate LiteHCP Targeter: shared-hosting setup, .env configuration, CSV import and imputation, JSON rules reference, segments, exports, privacy and security.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tanzir71.github.io/litehcp_targeter/docs.html">
+    <meta property="og:title" content="LiteHCP Targeter — Documentation">
+    <meta property="og:description" content="Setup, configuration, rules JSON reference, segmentation, exports, and security.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c;
+            --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6; --acc:#2540ff;
+            --dk-bg:#0c0d0e; --dk-ink:#f4f3ee; --dk-mute:#8e8f88; --dk-rule:#232527;
+            --f-sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+            --f-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+        }
+        * { box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
+        body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--f-sans); font-size:14.5px; line-height:1.65; }
+        a { color:inherit; text-decoration:none; }
+        .container { margin:0 auto; max-width:1152px; padding:0 20px; }
+        .mono { font-family:var(--f-mono); }
+        header { position:sticky; top:0; z-index:40; border-bottom:1px solid var(--border); background:rgba(244,243,238,0.92); backdrop-filter:blur(10px); }
+        .header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; }
+        .brand { display:inline-flex; align-items:center; gap:12px; }
+        .logo { display:grid; place-items:center; width:34px; height:34px; background:var(--fg); }
+        .logo span { font-family:var(--f-mono); font-size:11px; color:var(--bg); letter-spacing:0.05em; }
+        .brand-name { font-size:14px; font-weight:600; letter-spacing:-0.02em; }
+        nav.top { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px; font-size:14px; }
+        .nav-link { display:inline-flex; height:36px; align-items:center; padding:0 10px; color:var(--muted); }
+        .nav-link:hover { background:var(--bg-alt); color:var(--fg); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 18px; border:1px solid var(--fg); background:var(--fg); color:var(--bg); font-size:14px; font-weight:550; }
+        .btn:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
+        .layout { display:grid; grid-template-columns:1fr; gap:40px; padding:48px 0 80px; }
+        @media (min-width:980px) { .layout { grid-template-columns:220px minmax(0,1fr); } }
+        .toc { position:sticky; top:84px; align-self:start; display:none; }
+        @media (min-width:980px) { .toc { display:block; } }
+        .toc .t { font-family:var(--f-mono); font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:10px; }
+        .toc a { display:block; padding:5px 0 5px 12px; border-left:2px solid var(--border-soft); font-size:13px; color:var(--muted); }
+        .toc a:hover { color:var(--fg); border-left-color:var(--acc); }
+        .eyebrow { display:inline-flex; align-items:center; gap:12px; font-family:var(--f-mono); font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted); }
+        .eyebrow::before { content:""; width:12px; height:12px; background:var(--acc); flex:none; }
+        h1 { margin:18px 0 8px; font-size:36px; font-weight:650; letter-spacing:-0.035em; line-height:1.05; }
+        .lead { color:var(--muted); max-width:640px; margin:0 0 8px; }
+        section.doc { padding:36px 0 8px; border-top:1px solid var(--border); margin-top:36px; }
+        section.doc:first-of-type { border-top:none; margin-top:0; padding-top:8px; }
+        h2 { font-size:24px; font-weight:650; letter-spacing:-0.03em; margin:0 0 6px; }
+        h2 .idx { font-family:var(--f-mono); font-size:12px; color:var(--faint); letter-spacing:0.18em; display:block; margin-bottom:8px; }
+        h3 { font-size:16px; font-weight:650; margin:26px 0 6px; }
+        p { max-width:720px; }
+        p.note { border:1px solid var(--border); background:var(--panel); padding:12px 14px; font-size:13.5px; }
+        pre { background:var(--dk-bg); color:var(--dk-ink); font-family:var(--f-mono); font-size:12.5px; line-height:1.7; padding:16px; overflow-x:auto; margin:14px 0; max-width:760px; }
+        pre .c { color:#76776f; }
+        pre .a { color:#8fa3ff; }
+        code { font-family:var(--f-mono); font-size:0.92em; background:var(--bg-alt); border:1px solid var(--border-soft); padding:1px 5px; }
+        pre code { background:none; border:0; padding:0; }
+        table { width:100%; max-width:760px; border-collapse:collapse; font-size:13px; margin:14px 0; background:var(--panel); border:1px solid var(--border); }
+        th { font-family:var(--f-mono); font-size:10.5px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted-2); text-align:left; padding:8px 12px; border-bottom:1px solid var(--fg); }
+        td { padding:8px 12px; border-bottom:1px solid var(--border-soft); vertical-align:top; }
+        ul { max-width:720px; padding-left:22px; }
+        li { margin:4px 0; }
+        footer { border-top:1px solid var(--border); padding:24px 0 40px; font-size:13px; color:var(--muted); }
+        footer a { border-bottom:1px solid var(--border); }
+        footer a:hover { color:var(--fg); border-color:var(--acc); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-inner">
+            <a class="brand" href="./index.html">
+                <div class="logo"><span>HT</span></div>
+                <span class="brand-name">LiteHCP Targeter</span>
+            </a>
+            <nav class="top">
+                <a class="nav-link" href="./index.html">Home</a>
+                <a class="nav-link" href="./compare.html">Compare</a>
+                <a class="nav-link" href="./demo.html">Demo</a>
+                <a class="btn" href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container layout">
+        <aside class="toc">
+            <div class="t">On this page</div>
+            <a href="#deploy">Deploy</a>
+            <a href="#local">Run locally</a>
+            <a href="#config">Configuration</a>
+            <a href="#import">CSV import</a>
+            <a href="#imputation">Imputation</a>
+            <a href="#scoring">Scoring</a>
+            <a href="#rules">Rules reference</a>
+            <a href="#segments">Segments</a>
+            <a href="#simulator">Simulator</a>
+            <a href="#export">Exports & privacy</a>
+            <a href="#cron">Cron</a>
+            <a href="#security">Security</a>
+            <a href="#backup">Backups</a>
+        </aside>
+        <main>
+            <span class="eyebrow">Documentation</span>
+            <h1>Operate LiteHCP Targeter</h1>
+            <p class="lead">Everything from first upload to production operation. The app is one PHP file; this page is the rest of the manual.</p>
+
+            <section id="deploy" class="doc">
+                <h2><span class="idx">DOC · 01</span>Deploy on shared hosting (cPanel / Namecheap)</h2>
+                <p>Requirements: <b>PHP 8.0+</b> with PDO + SQLite (default on nearly every host), and write permission in the app directory.</p>
+                <pre><span class="c"># 1. upload the single file</span>
+public_html/litehcp.php
+
+<span class="c"># 2. cPanel → MultiPHP Manager → set directory to PHP 8+</span>
+
+<span class="c"># 3. permissions</span>
+litehcp.php        0644
+app folder         0755
+litehcp_uploads/   0750   <span class="c"># created automatically; 0755 if your host requires it</span>
+
+<span class="c"># 4. enforce HTTPS (hosting panel or redirect rule)</span>
+
+<span class="c"># 5. visit /litehcp.php → register → first user becomes admin</span></pre>
+                <p>On first load the app auto-creates its SQLite schema at <code>./litehcp.db</code> and the <code>litehcp_uploads/</code> directory (with web access denied via <code>.htaccess</code>).</p>
+                <p class="note"><b>See it working immediately:</b> Dashboard → <b>Load sample</b> imports the embedded demo dataset — 200 realistic HCP profiles with believable data gaps, 8 enrichment rules, and 5 segments. Same data as the <a href="./demo.html" style="border-bottom:1px solid var(--acc)">browser demo</a>.</p>
+            </section>
+
+            <section id="local" class="doc">
+                <h2><span class="idx">DOC · 02</span>Run locally</h2>
+                <pre>$ git clone https://github.com/tanzir71/litehcp_targeter
+$ cd litehcp_targeter
+$ php -S localhost:8000
+<span class="c"># → open http://localhost:8000/litehcp.php</span></pre>
+                <p>The built-in PHP server is fine for evaluation and development. For production, use any real web server with HTTPS.</p>
+            </section>
+
+            <section id="config" class="doc">
+                <h2><span class="idx">DOC · 03</span>Configuration</h2>
+                <p>All knobs live in the <code>$CONFIG</code> block at the top of <code>litehcp.php</code> — priority weights, confidence penalties, imputation defaults, export field allowlists, rate limits, upload limits. A few common settings can be overridden without editing the file via <code>.env</code> next to it:</p>
+                <pre><span class="c"># .env (never commit this file)</span>
+CRON_TOKEN=<span class="a">"change-this-long-random-token"</span>
+ACCENT_COLOR=<span class="a">"#2540FF"</span>
+SESSION_TIMEOUT_SECONDS=<span class="a">"1800"</span>
+UPLOAD_MAX_BYTES=<span class="a">"5242880"</span></pre>
+                <table>
+                    <thead><tr><th>Config key</th><th>Default</th><th>What it does</th></tr></thead>
+                    <tbody>
+                        <tr><td class="mono">priorityWeights</td><td class="mono">0.30 / 0.40 / 0.30</td><td>Consent / recency / engagement weights for the base priority score.</td></tr>
+                        <tr><td class="mono">recencyWindowDays</td><td class="mono">90</td><td>Activity older than this contributes zero recency.</td></tr>
+                        <tr><td class="mono">confidenceStrictThreshold</td><td class="mono">70</td><td>Minimum confidence for strict-mode segments (also editable in Settings).</td></tr>
+                        <tr><td class="mono">confidence*Penalty</td><td class="mono">10 / 3 / 6</td><td>Confidence deductions for missing required, missing optional, and imputed fields.</td></tr>
+                        <tr><td class="mono">importCommitEvery</td><td class="mono">200</td><td>Rows per import chunk/transaction.</td></tr>
+                        <tr><td class="mono">defaultExportFieldsMinimal</td><td class="mono">6 fields, no PII</td><td>What a standard export contains.</td></tr>
+                        <tr><td class="mono">rateLimit</td><td class="mono">login / register / export</td><td>Window, attempt, and block settings per action.</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="import" class="doc">
+                <h2><span class="idx">DOC · 04</span>CSV import</h2>
+                <p>Import is a three-step flow: <b>upload → map → run</b>.</p>
+                <ul>
+                    <li><b>Upload</b> — CSV only, validated by extension, MIME type, and size (<code>UPLOAD_MAX_BYTES</code>). Filenames are sanitized and files stored in <code>litehcp_uploads/</code>.</li>
+                    <li><b>Map</b> — match your CSV columns to internal fields. Internal fields: <code>hcp_id, name, email, specialty, region, organization, role, consent_email, consent_web, last_activity_ts, imports_count</code>. A mapping-confidence figure feeds the profile confidence score.</li>
+                    <li><b>Run</b> — processes in chunks (200 rows by default) with a progress bar and a "run until done" auto-reload mode. Profiles <b>upsert by <code>hcp_id</code></b>, so re-imports are safe.</li>
+                </ul>
+            </section>
+
+            <section id="imputation" class="doc">
+                <h2><span class="idx">DOC · 05</span>Imputation</h2>
+                <p>Each internal field gets an imputation strategy applied to blank values during import:</p>
+                <table>
+                    <thead><tr><th>Strategy</th><th>Behavior</th></tr></thead>
+                    <tbody>
+                        <tr><td class="mono">fixed</td><td>Substitute a constant (e.g. region → "Unknown").</td></tr>
+                        <tr><td class="mono">mode</td><td>Use the most frequent value in the file for that column.</td></tr>
+                        <tr><td class="mono">mean</td><td>Use the column mean (numeric fields).</td></tr>
+                        <tr><td class="mono">leave_null_flag</td><td>Keep it null, but flag the profile as incomplete.</td></tr>
+                    </tbody>
+                </table>
+                <p>Imputed values are stored in the profile's metadata and shown with a <span style="border-bottom:2px dotted var(--acc)">dotted underline</span> throughout the UI — imputation is never silent.</p>
+            </section>
+
+            <section id="scoring" class="doc">
+                <h2><span class="idx">DOC · 06</span>Scoring</h2>
+                <h3>Priority score (0–100)</h3>
+                <pre>priority = 100 × ( 0.30 × consent01      <span class="c"># (consent_email + consent_web) / 2</span>
+                 + 0.40 × recency01      <span class="c"># 1 − age/recencyWindow, floored at 0</span>
+                 + 0.30 × engagement01 ) <span class="c"># imports_count / 10, capped at 1</span></pre>
+                <p>Rules may then adjust it (<code>add_priority_delta</code>) or set it outright (<code>set_priority_score</code>). The final value is clamped to 0–100.</p>
+                <h3>Confidence score (0–100)</h3>
+                <p>Starts at 100 and is reduced by missing required fields, missing optional fields, imputed fields, and incomplete column mapping. Strict-mode segments and exports can require a minimum confidence.</p>
+            </section>
+
+            <section id="rules" class="doc">
+                <h2><span class="idx">DOC · 07</span>Rules reference</h2>
+                <p>Rules are JSON, evaluated against every profile in <b>priority order</b> (highest first). A rule is a condition tree plus actions:</p>
+                <pre>{
+  <span class="a">"match"</span>: "AND",                     <span class="c">// or "OR"; nested "all"/"any" arrays also supported</span>
+  <span class="a">"conditions"</span>: [
+    { "field": "specialty", "op": "=",  "value": "oncology" },
+    { "field": "consent_email", "op": "=", "value": 1 }
+  ],
+  <span class="a">"continue_on_match"</span>: true           <span class="c">// false = stop evaluating further rules</span>
+}</pre>
+                <table>
+                    <thead><tr><th>Operators</th><th>Actions</th></tr></thead>
+                    <tbody><tr>
+                        <td class="mono">= · != · &gt; · &gt;= · &lt; · &lt;= · in · contains · regex</td>
+                        <td class="mono">set_persona · set_priority_score · add_priority_delta · set_compliance_flag · add_tags</td>
+                    </tr></tbody>
+                </table>
+                <p>The special field <code>tags</code> matches against tags added by earlier (higher-priority) rules, so rules can chain. Every matched rule is recorded in the profile's metadata trace — segments can target "profiles where rule X fired".</p>
+                <p class="note"><b>Test before saving:</b> the rule editor includes a tester that evaluates a draft rule against up to 50 live profiles and shows exactly which match and why.</p>
+            </section>
+
+            <section id="segments" class="doc">
+                <h2><span class="idx">DOC · 08</span>Segments</h2>
+                <p>A segment is either a <b>safe SQL-like filter</b> or a set of <b>rule IDs</b> (profiles where those rules fired). Filters are strictly validated: field names must be on the allowlist, and semicolons, comments, double quotes, and DDL/DML keywords are rejected.</p>
+                <pre><span class="c">-- examples (all from the embedded sample)</span>
+specialty = 'oncology' AND confidence_score >= 70
+consent_email = 1 AND region = 'West'
+imports_count >= 5
+persona = 'Do Not Contact'</pre>
+                <p>Two run modes: <b>strict</b> additionally requires <code>confidence_score ≥ threshold</code> (default 70); <b>inclusive</b> returns all matches. Preview member counts and rows before exporting.</p>
+            </section>
+
+            <section id="simulator" class="doc">
+                <h2><span class="idx">DOC · 09</span>Campaign simulator</h2>
+                <p>Pick a segment, set assumptions — contact rate, response rate, cost per contact, value per response — and get projected contacts, responses, cost, value, and ROI. Every run is stored in the audit log with its assumptions, so the numbers behind a plan stay traceable.</p>
+            </section>
+
+            <section id="export" class="doc">
+                <h2><span class="idx">DOC · 10</span>Exports & privacy</h2>
+                <ul>
+                    <li>Default export fields: <code>hcp_id, specialty, region, persona, priority_score, confidence_score</code> — <b>no email, no name</b>.</li>
+                    <li>PII export (email/name) requires an admin to enable <code>export_pii</code> in Settings, and each PII export is individually audited.</li>
+                    <li>Field selection is enforced against <code>allowedExportFields</code> server-side.</li>
+                    <li>Exports are rate-limited.</li>
+                </ul>
+            </section>
+
+            <section id="cron" class="doc">
+                <h2><span class="idx">DOC · 11</span>Cron recompute</h2>
+                <p>For large datasets, recompute base scores and re-apply rules on a schedule instead of synchronously:</p>
+                <pre><span class="c"># cPanel → Cron Jobs (CLI form, preferred)</span>
+php /home/USER/public_html/litehcp.php action=cron_recompute token=YOUR_CRON_TOKEN
+
+<span class="c"># or via HTTP</span>
+https://your-site.com/litehcp.php?action=cron_recompute&amp;token=YOUR_CRON_TOKEN</pre>
+                <p>Set the token via <code>.env</code> (<code>CRON_TOKEN</code>) and rotate it if it leaks. Processing is batched (200 profiles per transaction).</p>
+            </section>
+
+            <section id="security" class="doc">
+                <h2><span class="idx">DOC · 12</span>Security model</h2>
+                <ul>
+                    <li><b>Auth</b> — password hashing via <code>password_hash</code>, session regeneration on login, idle timeout, first user becomes admin, registration closed by default afterward.</li>
+                    <li><b>CSRF</b> — token required on every POST.</li>
+                    <li><b>Headers</b> — CSP (nonce-based scripts, no third-party origins beyond fonts), X-Frame-Options DENY, nosniff, referrer policy, permissions policy.</li>
+                    <li><b>SQL</b> — prepared statements everywhere; segment filters validated against a field allowlist with keyword denylist.</li>
+                    <li><b>Uploads</b> — CSV-only validation by extension/MIME/size, sanitized filenames, uploads directory denied to the web.</li>
+                    <li><b>Rate limiting</b> — login, registration, and export endpoints.</li>
+                    <li><b>Errors</b> — logged server-side; no stack traces to the browser.</li>
+                </ul>
+                <p>Hardening checklist for production: enforce HTTPS, use a strong admin password, consider an <code>.htaccess</code> IP allowlist or basic auth in front, and make sure <code>litehcp.db</code> is not world-readable. Full details in <a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md" style="border-bottom:1px solid var(--acc)">SECURITY.md</a>.</p>
+            </section>
+
+            <section id="backup" class="doc">
+                <h2><span class="idx">DOC · 13</span>Backups</h2>
+                <p>The entire state is two artifacts next to the app file:</p>
+                <pre>litehcp.db          <span class="c"># all data — back up daily/weekly</span>
+litehcp_uploads/    <span class="c"># original CSVs + server logs — optional</span></pre>
+                <p>Restoring is copying the files back. There is no external state.</p>
+            </section>
+        </main>
+    </div>
+    <footer>
+        <div class="container" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
+            <div>LiteHCP Targeter — built by <a href="https://tanziro.com" target="_blank" rel="noopener">Tanzir</a></div>
+            <div><a href="./index.html">Home</a> · <a href="./compare.html">Compare</a> · <a href="./demo.html">Demo</a> · <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></div>
+        </div>
+    </footer>
+</body>
+</html>

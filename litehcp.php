@@ -23,7 +23,7 @@ $CONFIG = [
     'appName' => 'LiteHCP Targeter',
     'repoUrl' => 'https://github.com/tanzir71/litehcp_targeter',
     'dbDsn' => 'sqlite:./litehcp.db',
-    'accentColor' => '#1A73E8',
+    'accentColor' => '#2540FF',
     'locale' => 'en_US',
     'currency' => 'USD',
 
@@ -134,58 +134,221 @@ Sample content (embedded)
 */
 
 function sample_csv(): string {
-    $ts1 = time() - 86400 * 5;
-    $ts2 = time() - 86400 * 45;
-    $ts4 = time() - 86400 * 120;
-    return "hcp_id,name,email,specialty,region,organization,role,consent_email,consent_web,last_activity_ts,imports_count\n" .
-        "HCP-1001,Dr. Amira Khan,amira.khan@example.test,oncology,West,Acme Health,Physician,1,1,{$ts1},3\n" .
-        "HCP-1002,Dr. Ben Wu,,cardiology,East,Sunrise Clinic,Physician,1,0,{$ts2},2\n" .
-        "HCP-1003,Nurse Carla Diaz,carla.diaz@example.test,oncology,West,Acme Health,Nurse,0,1,,1\n" .
-        "HCP-1004,Dr. Dinesh Patel,dinesh.patel@example.test,dermatology,,Metro Hospital,Physician,1,1,{$ts4},5\n";
+    // Deterministic demo dataset: 200 realistic HCP profiles with believable gaps
+    // (missing emails/regions/specialties/activity) so imputation + confidence scoring
+    // have something real to chew on. Same seed => same data on every load.
+    $seed = 20260612;
+    $rand = function (int $n) use (&$seed): int {
+        $seed = ($seed * 1103515245 + 12345) % 2147483648;
+        return (int)($seed % max(1, $n));
+    };
+
+    $firstNames = ['Amira','Ben','Carla','Dinesh','Elena','Farid','Grace','Hiro','Imani','Jonas','Katya','Liam','Mei','Noor','Omar','Priya','Quinn','Rosa','Sven','Tara','Umar','Vera','Wei','Ximena','Yusuf','Zoe','Anders','Bianca','Chidi','Dalia','Emil','Fatima','Gustav','Hana','Idris','Jana','Kofi','Leila','Marco','Nadia'];
+    $lastNames  = ['Khan','Wu','Diaz','Patel','Sorensen','Haddad','Okafor','Tanaka','Jallow','Berg','Ivanova','Connolly','Chen','Rahman','Farouk','Iyer','Marsh','Alvarez','Lindqvist','Bose','Aziz','Petrova','Zhang','Reyes','Demir','Mertens','Holm','Ricci','Eze','Mansour','Novak','Said','Lund','Kobayashi','Toure','Kovac','Mensah','Nasser','Bianchi','Karim'];
+
+    // Weighted pools (repeat entries = higher frequency).
+    $specialtyPool = ['oncology','oncology','oncology','cardiology','cardiology','cardiology','dermatology','dermatology','neurology','endocrinology','pediatrics','psychiatry','rheumatology','pulmonology','primary care','primary care'];
+    $regions = ['West','East','Midwest','South','Northeast'];
+    $orgs = ['Acme Health','Sunrise Clinic','Metro Hospital','Lakeside Medical Group','Northbridge Health','Cedar Valley Clinic','St. Adelhart Hospital','Riverbend Oncology Center','Harborview Cardiology','Summit Care Partners','Prairie Family Medicine','Bluestone Medical Center','Pinecrest Health Network','Westgate Specialty Group'];
+    $rolePool = ['Physician','Physician','Physician','Physician','Physician','Physician','Nurse','Nurse','Nurse Practitioner','Physician Assistant','Pharmacist'];
+
+    $now = time();
+    $out = "hcp_id,name,email,specialty,region,organization,role,consent_email,consent_web,last_activity_ts,imports_count\n";
+
+    for ($i = 0; $i < 200; $i++) {
+        $fn = $firstNames[$rand(count($firstNames))];
+        $ln = $lastNames[$rand(count($lastNames))];
+        $role = $rolePool[$rand(count($rolePool))];
+        $prefix = $role === 'Physician' ? 'Dr. ' : ($role === 'Nurse' ? 'Nurse ' : '');
+        $name = $prefix . $fn . ' ' . $ln;
+
+        // ~12% missing email, ~6% missing specialty, ~9% missing region, ~15% missing activity.
+        $email = ($rand(100) < 12) ? '' : strtolower($fn) . '.' . strtolower($ln) . ($i + 1) . '@example.test';
+        $specialty = ($rand(100) < 6) ? '' : $specialtyPool[$rand(count($specialtyPool))];
+        $region = ($rand(100) < 9) ? '' : $regions[$rand(count($regions))];
+        $org = $orgs[$rand(count($orgs))];
+
+        $consentEmail = ($rand(100) < 68) ? 1 : 0;
+        $consentWeb = ($rand(100) < 58) ? 1 : 0;
+
+        if ($rand(100) < 15) {
+            $lastActivity = '';
+        } else {
+            // Skew toward recent activity: min of two draws over 365 days.
+            $daysAgo = min($rand(365), $rand(365));
+            $lastActivity = (string)($now - $daysAgo * 86400 - $rand(86400));
+        }
+
+        // Engagement loosely correlated with consent.
+        $imports = 1 + $rand(4) + (($consentEmail && $consentWeb) ? $rand(5) : 0);
+
+        $out .= 'HCP-' . (1001 + $i) . ",{$name},{$email},{$specialty},{$region},{$org},{$role},{$consentEmail},{$consentWeb},{$lastActivity},{$imports}\n";
+    }
+    return $out;
 }
 
-const SAMPLE_RULES = [
-    [
-        'name' => 'Oncology + Email Consent => Engaged persona',
-        'priority' => 100,
-        'conditions' => [
-            'match' => 'AND',
+function sample_rules(): array {
+    $recentCutoff = time() - 86400 * 30;
+    return [
+        [
+            'name' => 'No consent at all => Do Not Contact',
+            'priority' => 200,
             'conditions' => [
-                ['field' => 'specialty', 'op' => '=', 'value' => 'oncology'],
-                ['field' => 'consent_email', 'op' => '=', 'value' => 1],
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'consent_email', 'op' => '=', 'value' => 0],
+                    ['field' => 'consent_web', 'op' => '=', 'value' => 0],
+                ],
+                'continue_on_match' => false,
             ],
-            'continue_on_match' => true,
+            'actions' => [
+                'set_persona' => 'Do Not Contact',
+                'set_priority_score' => 5,
+                'set_compliance_flag' => 0,
+                'add_tags' => ['no_consent', 'suppressed'],
+            ],
         ],
-        'actions' => [
-            'set_persona' => 'Oncology Engaged',
-            'set_priority_score' => 85,
-            'set_compliance_flag' => 1,
-            'add_tags' => ['oncology', 'email_ok'],
-        ],
-    ],
-    [
-        'name' => 'Low consent => Compliance flag',
-        'priority' => 50,
-        'conditions' => [
-            'match' => 'OR',
+        [
+            'name' => 'Oncology + email consent => Oncology Engaged',
+            'priority' => 100,
             'conditions' => [
-                ['field' => 'consent_email', 'op' => '=', 'value' => 0],
-                ['field' => 'consent_web', 'op' => '=', 'value' => 0],
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'specialty', 'op' => '=', 'value' => 'oncology'],
+                    ['field' => 'consent_email', 'op' => '=', 'value' => 1],
+                ],
+                'continue_on_match' => true,
             ],
-            'continue_on_match' => false,
+            'actions' => [
+                'set_persona' => 'Oncology Engaged',
+                'add_priority_delta' => 15,
+                'set_compliance_flag' => 1,
+                'add_tags' => ['oncology', 'email_ok'],
+            ],
         ],
-        'actions' => [
-            'set_compliance_flag' => 0,
-            'add_priority_delta' => -10,
-            'add_tags' => ['consent_missing'],
+        [
+            'name' => 'Cardiology + email consent => Cardio Engaged',
+            'priority' => 95,
+            'conditions' => [
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'specialty', 'op' => '=', 'value' => 'cardiology'],
+                    ['field' => 'consent_email', 'op' => '=', 'value' => 1],
+                ],
+                'continue_on_match' => true,
+            ],
+            'actions' => [
+                'set_persona' => 'Cardio Engaged',
+                'add_priority_delta' => 12,
+                'set_compliance_flag' => 1,
+                'add_tags' => ['cardiology', 'email_ok'],
+            ],
         ],
-    ],
-];
+        [
+            'name' => 'High-frequency engagers (5+ imports)',
+            'priority' => 80,
+            'conditions' => [
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'imports_count', 'op' => '>=', 'value' => 5],
+                ],
+                'continue_on_match' => true,
+            ],
+            'actions' => [
+                'add_priority_delta' => 10,
+                'add_tags' => ['power_user'],
+            ],
+        ],
+        [
+            'name' => 'Active in last 30 days => recency boost',
+            'priority' => 75,
+            'conditions' => [
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'last_activity_ts', 'op' => '>=', 'value' => $recentCutoff],
+                ],
+                'continue_on_match' => true,
+            ],
+            'actions' => [
+                'add_priority_delta' => 8,
+                'add_tags' => ['recently_active'],
+            ],
+        ],
+        [
+            'name' => 'Web-only consent => Web Reachable',
+            'priority' => 60,
+            'conditions' => [
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'consent_email', 'op' => '=', 'value' => 0],
+                    ['field' => 'consent_web', 'op' => '=', 'value' => 1],
+                ],
+                'continue_on_match' => true,
+            ],
+            'actions' => [
+                'set_persona' => 'Web Reachable',
+                'add_tags' => ['web_only'],
+            ],
+        ],
+        [
+            'name' => 'Advanced practice providers => APP tag',
+            'priority' => 55,
+            'conditions' => [
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'role', 'op' => 'in', 'value' => ['Nurse Practitioner', 'Physician Assistant']],
+                ],
+                'continue_on_match' => true,
+            ],
+            'actions' => [
+                'add_priority_delta' => 5,
+                'add_tags' => ['advanced_practice'],
+            ],
+        ],
+        [
+            'name' => 'Low engagement (single import) => cooldown',
+            'priority' => 40,
+            'conditions' => [
+                'match' => 'AND',
+                'conditions' => [
+                    ['field' => 'imports_count', 'op' => '<=', 'value' => 1],
+                ],
+                'continue_on_match' => true,
+            ],
+            'actions' => [
+                'add_priority_delta' => -8,
+                'add_tags' => ['low_engagement'],
+            ],
+        ],
+    ];
+}
 
-const SAMPLE_SEGMENT = [
-    'name' => 'Oncology (high confidence)',
-    'rule_ids' => [],
-    'sql_filter' => "specialty = 'oncology' AND confidence_score >= 70",
+const SAMPLE_SEGMENTS = [
+    [
+        'name' => 'Oncology — high confidence',
+        'rule_ids' => [],
+        'sql_filter' => "specialty = 'oncology' AND confidence_score >= 70",
+    ],
+    [
+        'name' => 'Cardiology — engaged',
+        'rule_ids' => [],
+        'sql_filter' => "specialty = 'cardiology' AND priority_score >= 60",
+    ],
+    [
+        'name' => 'Email-reachable West',
+        'rule_ids' => [],
+        'sql_filter' => "consent_email = 1 AND region = 'West'",
+    ],
+    [
+        'name' => 'Power users (5+ imports)',
+        'rule_ids' => [],
+        'sql_filter' => 'imports_count >= 5',
+    ],
+    [
+        'name' => 'Suppression list (Do Not Contact)',
+        'rule_ids' => [],
+        'sql_filter' => "persona = 'Do Not Contact'",
+    ],
 ];
 
 /*
@@ -302,8 +465,8 @@ function send_security_headers(array $CONFIG, string $nonce): void {
         "object-src 'none'",
         "img-src 'self' data:",
         "font-src 'self' https://fonts.gstatic.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
-        "script-src 'self' https://cdn.jsdelivr.net 'nonce-{$nonce}'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "script-src 'self' 'nonce-{$nonce}'",
         "connect-src 'self'",
         "form-action 'self'",
         "upgrade-insecure-requests",
@@ -570,28 +733,145 @@ function page_header(string $title, array $CONFIG, array $settings, ?array $user
     echo "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">";
     echo "<title>" . h($app) . " — " . h($title) . "</title>";
     echo "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>";
-    echo "<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap\" rel=\"stylesheet\">";
-    echo "<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\">";
+    echo "<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap\" rel=\"stylesheet\">";
     echo "<style>
-        :root{--accent:{$accent};}
-        body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fff;color:#111;}
-        .app-shell{max-width:1180px;}
-        .navbar{border-bottom:1px solid #eaeaea;}
-        .nav-tabs .nav-link{color:#111;}
-        .nav-tabs .nav-link.active{border-color:#111 #111 #fff;}
-        .btn-primary{background:var(--accent);border-color:var(--accent);}
-        .btn-primary:hover{filter:brightness(0.95);background:var(--accent);border-color:var(--accent);}
-        .badge-accent{background:var(--accent);}
-        .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace;}
-        .table thead th{border-bottom:1px solid #111 !important;}
-        .card{border:1px solid #eaeaea;}
-        .muted{color:#666;}
-        .imputed{border-bottom:2px dotted var(--accent);}
-        .kbd{font-family:ui-monospace,monospace;padding:2px 6px;border:1px solid #ddd;border-radius:6px;background:#fafafa;}
+        :root{
+            --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c;
+            --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6;
+            --acc:{$accent}; --acc-soft:#c8d0ff;
+            --dk-bg:#0c0d0e; --dk-ink:#f4f3ee; --dk-mute:#8e8f88; --dk-rule:#232527;
+            --ok:#1a7f37; --warn:#9a6700; --danger:#b3261e;
+            --f-sans:\"Inter\",\"Helvetica Neue\",Helvetica,Arial,system-ui,sans-serif;
+            --f-mono:\"JetBrains Mono\",\"SF Mono\",ui-monospace,Menlo,Consolas,monospace;
+        }
+        *{box-sizing:border-box}
+        body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-sans);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+        a{color:inherit;text-decoration:none}
+        b,strong,.fw-bold{font-weight:700}.fw-semibold{font-weight:600}
+        hr{border:0;border-top:1px solid var(--border-soft);margin:14px 0}
+        pre{margin:0}
+        .mono,.kbd,code,kbd{font-family:var(--f-mono)}
+        .small{font-size:12.5px}.muted{color:var(--muted)}.text-danger{color:var(--danger)}
+        .h3{font-size:24px;font-weight:650;letter-spacing:-0.025em;margin:0;line-height:1.15}
+        .h4{font-size:20px;font-weight:650;letter-spacing:-0.02em;margin:0;line-height:1.2}
+        .display-6{font-size:34px;font-weight:650;letter-spacing:-0.03em;font-variant-numeric:tabular-nums}
+        .app-shell{max-width:1180px;margin:0 auto;padding-left:20px;padding-right:20px}
+        .container-fluid{width:100%}
+
+        /* header */
+        .navbar{position:sticky;top:0;z-index:40;border-bottom:1px solid var(--border);background:rgba(244,243,238,.92);backdrop-filter:blur(10px)}
+        .navbar .app-shell{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:10px;padding-bottom:10px}
+        .navbar-brand{display:inline-flex;align-items:center;gap:11px;font-size:14px;font-weight:600;letter-spacing:-0.02em}
+        .navbar-brand::before{content:\"HT\";display:grid;place-items:center;width:30px;height:30px;background:var(--fg);color:var(--bg);font-family:var(--f-mono);font-size:10px;letter-spacing:0.05em}
+
+        /* tabs */
+        .nav-tabs{display:flex;flex-wrap:wrap;gap:2px;list-style:none;margin:0 0 0;padding:6px 0 0;border-bottom:1px solid var(--border)}
+        .nav-item{display:block}
+        .nav-tabs .nav-link{display:inline-flex;align-items:center;height:34px;padding:0 12px;font-family:var(--f-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s ease,background-color .12s ease}
+        .nav-tabs .nav-link:hover{color:var(--fg);background:var(--bg-alt)}
+        .nav-tabs .nav-link.active{color:var(--fg);border-bottom-color:var(--acc);font-weight:500}
+
+        /* buttons */
+        .btn{display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border:1px solid var(--fg);background:transparent;color:var(--fg);font-size:13.5px;font-weight:550;font-family:var(--f-sans);cursor:pointer;white-space:nowrap;transition:background-color .12s ease,color .12s ease,border-color .12s ease}
+        .btn:hover{background:var(--fg);color:var(--bg)}
+        .btn-primary{background:var(--fg);color:var(--bg)}
+        .btn-primary:hover{background:var(--acc);border-color:var(--acc);color:#fff}
+        .btn-outline-dark{background:transparent}
+        .btn-sm{height:30px;padding:0 12px;font-size:12.5px}
+        .btn:disabled{opacity:.5;cursor:default}
+
+        /* cards / panels */
+        .card{border:1px solid var(--border);background:var(--panel)}
+        .p-3{padding:16px}.p-4{padding:24px}
+
+        /* badges */
+        .badge{display:inline-block;padding:3px 8px;font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;border:1px solid transparent}
+        .text-bg-success{background:var(--ok);color:#fff}
+        .text-bg-warning{background:var(--warn);color:#fff}
+        .text-bg-dark{background:var(--fg);color:var(--bg)}
+        .text-bg-danger{background:var(--danger);color:#fff}
+        .text-bg-light{background:var(--panel);color:var(--fg);border-color:var(--border)}
+        .badge-accent{background:var(--acc);color:#fff}
+
+        /* tables */
+        .table-responsive{overflow-x:auto}
+        .table{width:100%;border-collapse:collapse;font-size:13.5px}
+        .table th{font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted-2);text-align:left;padding:8px 10px;border-bottom:1px solid var(--fg)}
+        .table td{padding:8px 10px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+        .table tbody tr:hover{background:var(--bg-alt)}
+        .table-sm th,.table-sm td{padding:6px 8px}
+        .table .text-end{text-align:right}
+
+        /* forms */
+        .form-label{display:block;margin:0 0 4px;font-size:12.5px;font-weight:600}
+        .form-control,.form-select{display:block;width:100%;height:38px;padding:0 10px;border:1px solid var(--border);background:#fff;color:var(--fg);font-family:var(--f-sans);font-size:13.5px;border-radius:0;appearance:auto}
+        textarea.form-control{height:auto;padding:8px 10px;font-family:var(--f-mono);font-size:12.5px;line-height:1.6}
+        .form-control:focus,.form-select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-soft)}
+        .form-control-sm,.form-select-sm{height:30px;font-size:12.5px}
+        .form-check{display:flex;align-items:center;gap:8px;margin:4px 0}
+        .form-check-input{width:15px;height:15px;accent-color:var(--acc);margin:0}
+        .form-check-label{font-size:13.5px}
+        input[type=file].form-control{padding:6px 10px;height:auto}
+
+        /* misc components */
+        .alert{border:1px solid var(--border);background:var(--bg-alt);padding:12px 14px;font-size:13.5px}
+        .alert-dark{background:var(--dk-bg);color:var(--dk-ink);border-color:var(--dk-bg)}
+        .progress{height:10px;background:var(--bg-alt);border:1px solid var(--border)}
+        .progress-bar{display:block;height:100%;background:var(--fg)}
+        .bg-dark{background:var(--fg)}
+        .bg-white{background:var(--panel)}
+        .kbd{padding:2px 6px;border:1px solid var(--border);background:var(--panel);font-size:12px}
+        .imputed{border-bottom:2px dotted var(--acc)}
+        .link-dark{color:var(--fg);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--acc)}
+        .link-dark:hover{color:var(--acc)}
+
+        /* toasts */
+        .toast-container{position:fixed;bottom:0;right:0;z-index:1080;padding:16px;display:flex;flex-direction:column;align-items:flex-end}
+        .toast{display:block;min-width:260px;max-width:380px;border:1px solid var(--dk-rule);box-shadow:0 6px 24px rgba(10,10,10,.18);font-size:13.5px}
+        .toast .d-flex{align-items:center}
+        .toast-body{padding:11px 14px;flex:1}
+        .btn-close{appearance:none;border:0;background:transparent;color:inherit;font-size:16px;line-height:1;padding:0 12px;cursor:pointer;opacity:.7}
+        .btn-close:hover{opacity:1}
+        .btn-close::before{content:\"\\00d7\"}
+
+        /* layout utilities */
+        .d-flex{display:flex}.d-inline{display:inline}
+        .flex-wrap{flex-wrap:wrap}
+        .align-items-start{align-items:flex-start}.align-items-center{align-items:center}.align-middle{vertical-align:middle}
+        .justify-content-between{justify-content:space-between}.justify-content-center{justify-content:center}
+        .gap-2{gap:8px}.gap-3{gap:16px}
+        .ms-auto{margin-left:auto}.m-0{margin:0}.m-auto{margin:auto}.w-100{width:100%}
+        .me-1{margin-right:4px}.me-2{margin-right:8px}.me-3{margin-right:16px}
+        .mb-0{margin-bottom:0}.mb-1{margin-bottom:4px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:16px}
+        .mt-1{margin-top:4px}.mt-2{margin-top:8px}.mt-3{margin-top:16px}.mt-4{margin-top:24px}
+        .py-3{padding-top:16px;padding-bottom:16px}.pt-4{padding-top:24px}.pb-3{padding-bottom:16px}
+        .border{border:1px solid var(--border)}.border-top{border-top:1px solid var(--border)}.border-0{border:0}
+        .text-end{text-align:right}
+        .position-fixed{position:fixed}.bottom-0{bottom:0}.end-0{right:0}
+
+        /* grid */
+        .row{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+        .g-2{gap:8px}.g-3{gap:16px}
+        [class*=\"col-\"]{grid-column:span 12;min-width:0}
+        .col-6{grid-column:span 6}
+        @media (min-width:768px){
+            .col-md-1{grid-column:span 1}.col-md-2{grid-column:span 2}.col-md-3{grid-column:span 3}.col-md-4{grid-column:span 4}
+            .col-md-5{grid-column:span 5}.col-md-6{grid-column:span 6}.col-md-7{grid-column:span 7}
+        }
+        @media (min-width:992px){
+            .col-lg-5{grid-column:span 5}.col-lg-6{grid-column:span 6}.col-lg-7{grid-column:span 7}
+        }
+        @media (min-width:768px){.row.justify-content-center>[class*=\"col-\"]{grid-column:4/span 6}}
+        @media (min-width:992px){.row.justify-content-center>[class*=\"col-\"]{grid-column:5/span 4}}
+
+        /* page footer */
+        footer.app-footer{border-top:1px solid var(--border);margin-top:32px;padding:18px 0 24px}
+        footer.app-footer .small a{color:var(--muted)}
+        footer.app-footer .small a:hover{color:var(--fg)}
     </style></head><body>";
 
-    echo "<nav class=\"navbar navbar-expand-lg bg-white\"><div class=\"container-fluid app-shell\">";
-    echo "<a class=\"navbar-brand fw-bold\" href=\"?action=dashboard\">" . h($app) . "</a>";
+    echo "<nav class=\"navbar\"><div class=\"app-shell container-fluid\">";
+    echo "<a class=\"navbar-brand\" href=\"?action=dashboard\">" . h($app) . "</a>";
     echo "<div class=\"ms-auto d-flex align-items-center gap-2\">";
     if ($isLoggedIn) {
         echo "<span class=\"small muted\">" . h((string)($user['email'] ?? '')) . "</span>";
@@ -628,14 +908,13 @@ function page_footer(): void {
     $repo = (string)($GLOBALS['CONFIG']['repoUrl'] ?? 'https://github.com/tanzir71/litehcp_targeter');
     $setup = $repo . '/blob/main/SETUP.md';
     $sec = $repo . '/blob/main/SECURITY.md';
-    echo "<footer class=\"pt-4 pb-3 border-top mt-4\"><div class=\"d-flex flex-wrap justify-content-between align-items-center\">";
+    echo "<footer class=\"app-footer\"><div class=\"d-flex flex-wrap justify-content-between align-items-center gap-2\">";
     echo "<div class=\"small muted\">Docs: <a class=\"link-dark\" href=\"" . h($setup) . "\" target=\"_blank\" rel=\"noopener\">SETUP</a> · <a class=\"link-dark\" href=\"" . h($sec) . "\" target=\"_blank\" rel=\"noopener\">SECURITY</a></div>";
-    echo "<div class=\"small muted\"><a class=\"link-dark\" href=\"" . h($repo) . "\" target=\"_blank\" rel=\"noopener\">GitHub</a></div>";
+    echo "<div class=\"small muted mono\">local-first · sqlite · single file — <a class=\"link-dark\" href=\"" . h($repo) . "\" target=\"_blank\" rel=\"noopener\">GitHub</a></div>";
     echo "</div></footer>";
     echo "</main>";
-    echo "<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>";
     $nonce = (string)($GLOBALS['CSP_NONCE'] ?? '');
-    echo "<script nonce=\"" . h($nonce) . "\">document.querySelectorAll('.toast').forEach(t=>{try{new bootstrap.Toast(t,{delay:4500}).show()}catch(e){}})</script>";
+    echo "<script nonce=\"" . h($nonce) . "\">document.querySelectorAll('.toast').forEach(function(t){t.querySelectorAll('.btn-close').forEach(function(b){b.addEventListener('click',function(){t.remove()})});setTimeout(function(){t.style.transition='opacity .4s ease';t.style.opacity='0';setTimeout(function(){t.remove()},420)},4500)})</script>";
     echo "</body></html>";
 }
 
@@ -2443,9 +2722,10 @@ function handle_load_sample(PDO $pdo, array $CONFIG, array $settings): void {
         redirect('?action=dashboard');
     }
 
+    $sampleRules = sample_rules();
     $existing = $pdo->query('SELECT COUNT(*) c FROM rules')->fetch();
     if ((int)($existing['c'] ?? 0) === 0) {
-        foreach (SAMPLE_RULES as $r) {
+        foreach ($sampleRules as $r) {
             $pdo->prepare('INSERT INTO rules (name, conditions_json, actions_json, priority, created_at) VALUES (:n,:c,:a,:p,:t)')->execute([
                 ':n' => (string)$r['name'],
                 ':c' => json_encode_safe($r['conditions']),
@@ -2454,14 +2734,16 @@ function handle_load_sample(PDO $pdo, array $CONFIG, array $settings): void {
                 ':t' => time(),
             ]);
         }
-        audit($pdo, (int)$u['id'], 'sample_rules_loaded', ['count' => count(SAMPLE_RULES)]);
+        audit($pdo, (int)$u['id'], 'sample_rules_loaded', ['count' => count($sampleRules)]);
     }
 
     $segCount = $pdo->query('SELECT COUNT(*) c FROM segments')->fetch();
     if ((int)($segCount['c'] ?? 0) === 0) {
-        $pdo->prepare('INSERT INTO segments (name, rule_ids, sql_filter, last_run_at) VALUES (:n,:r,:s,NULL)')
-            ->execute([':n' => SAMPLE_SEGMENT['name'], ':r' => json_encode_safe(SAMPLE_SEGMENT['rule_ids']), ':s' => SAMPLE_SEGMENT['sql_filter']]);
-        audit($pdo, (int)$u['id'], 'sample_segment_loaded', ['name' => SAMPLE_SEGMENT['name']]);
+        foreach (SAMPLE_SEGMENTS as $seg) {
+            $pdo->prepare('INSERT INTO segments (name, rule_ids, sql_filter, last_run_at) VALUES (:n,:r,:s,NULL)')
+                ->execute([':n' => $seg['name'], ':r' => json_encode_safe($seg['rule_ids']), ':s' => $seg['sql_filter']]);
+        }
+        audit($pdo, (int)$u['id'], 'sample_segments_loaded', ['count' => count(SAMPLE_SEGMENTS)]);
     }
 
     $dir = ensure_upload_dir();
@@ -2530,4 +2812,5 @@ End summary (what happens under the hood)
 - Segments can be built from safe SQL-like filters or applied-rule traces, previewed, and exported as CSV.
 - Simulator projects contacts/responses/cost/ROI from segment size and user-defined assumptions; runs are audited.
 */
+
 

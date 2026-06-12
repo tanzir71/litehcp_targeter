@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IQVIA OCE Alternative for HCP Targeting — LiteHCP Targeter (Self-Hosted)</title>
+    <meta name="description" content="Want HCP targeting and segmentation without an IQVIA OCE engagement? LiteHCP Targeter is a self-hosted, single-file PHP tool: CSV import with imputation, JSON rules, segments, ROI simulation, privacy-first exports.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tanzir71.github.io/litehcp_targeter/iqvia-oce-alternative.html">
+    <meta property="og:title" content="IQVIA OCE Alternative for HCP Targeting — LiteHCP Targeter">
+    <meta property="og:description" content="Bring-your-own-data targeting: self-hosted, one PHP file, no contracts.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c; --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6; --acc:#2540ff; --f-sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif; --f-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--f-sans); font-size:14.5px; line-height:1.65; }
+        a { color:inherit; text-decoration:none; }
+        .container { margin:0 auto; max-width:900px; padding:0 20px; }
+        .mono { font-family:var(--f-mono); }
+        header { position:sticky; top:0; z-index:40; border-bottom:1px solid var(--border); background:rgba(244,243,238,0.92); backdrop-filter:blur(10px); }
+        .header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 20px; max-width:1152px; margin:0 auto; }
+        .brand { display:inline-flex; align-items:center; gap:12px; }
+        .logo { display:grid; place-items:center; width:34px; height:34px; background:var(--fg); }
+        .logo span { font-family:var(--f-mono); font-size:11px; color:var(--bg); letter-spacing:0.05em; }
+        .brand-name { font-size:14px; font-weight:600; letter-spacing:-0.02em; }
+        nav { display:flex; gap:6px; font-size:14px; flex-wrap:wrap; justify-content:flex-end; }
+        .nav-link { display:inline-flex; height:36px; align-items:center; padding:0 10px; color:var(--muted); }
+        .nav-link:hover { background:var(--bg-alt); color:var(--fg); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; height:42px; padding:0 18px; border:1px solid var(--fg); background:var(--fg); color:var(--bg); font-size:14px; font-weight:550; }
+        .btn:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
+        .btn-ghost { background:transparent; color:var(--fg); }
+        .btn-ghost:hover { background:var(--fg); color:var(--bg); }
+        .eyebrow { display:inline-flex; align-items:center; gap:12px; font-family:var(--f-mono); font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted); }
+        .eyebrow::before { content:""; width:12px; height:12px; background:var(--acc); flex:none; }
+        article { padding:56px 0 72px; }
+        h1 { margin:18px 0 0; font-size:34px; font-weight:650; letter-spacing:-0.035em; line-height:1.1; text-wrap:balance; }
+        @media (min-width:640px) { h1 { font-size:42px; } }
+        .lead { margin-top:16px; color:var(--muted); font-size:16px; line-height:1.7; }
+        h2 { font-size:22px; font-weight:650; letter-spacing:-0.025em; margin:40px 0 8px; }
+        p { max-width:720px; }
+        ul { max-width:720px; padding-left:22px; }
+        li { margin:5px 0; }
+        .panel { border:1px solid var(--border); background:var(--panel); padding:18px 20px; margin:18px 0; }
+        .panel.dark { background:#0c0d0e; color:#f4f3ee; border-color:#0c0d0e; }
+        .panel.dark .mono { color:#8fa3ff; }
+        .grid2 { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin:18px 0; }
+        @media (min-width:760px) { .grid2 { grid-template-columns:1fr 1fr; } }
+        .cell { background:var(--panel); padding:18px 20px; }
+        .cell h3 { margin:0 0 6px; font-size:15px; font-weight:650; }
+        .cell p, .cell li { font-size:13.5px; color:var(--muted); }
+        .cell ul { padding-left:20px; margin:6px 0 0; }
+        .cta-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; }
+        .disclaimer { font-size:12px; color:var(--muted-2); margin-top:28px; line-height:1.6; }
+        footer { border-top:1px solid var(--border); padding:24px 0 40px; font-size:13px; color:var(--muted); }
+        footer .container { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; max-width:1152px; }
+        footer a { border-bottom:1px solid var(--border); }
+        footer a:hover { color:var(--fg); border-color:var(--acc); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <a class="brand" href="./index.html"><div class="logo"><span>HT</span></div><span class="brand-name">LiteHCP Targeter</span></a>
+            <nav>
+                <a class="nav-link" href="./index.html">Home</a>
+                <a class="nav-link" href="./docs.html">Docs</a>
+                <a class="nav-link" href="./compare.html">Compare</a>
+                <a class="nav-link" href="./demo.html">Demo</a>
+            </nav>
+        </div>
+    </header>
+    <article class="container">
+        <span class="eyebrow">Alternative guide</span>
+        <h1>Bring-your-own-data HCP targeting, without the OCE engagement</h1>
+        <p class="lead">IQVIA's OCE suite and OneKey reference data power omnichannel engagement for large commercial organizations. They're bought through enterprise engagements — data licensing, implementation, managed services. If your need is narrower — <b>you already have HCP lists and you need to score, segment, and export them defensibly</b> — LiteHCP Targeter covers that workflow with a single self-hosted PHP file.</p>
+
+        <h2>Two different philosophies</h2>
+        <div class="grid2">
+            <div class="cell">
+                <h3>IQVIA model: data + platform + services</h3>
+                <ul>
+                    <li>Verified HCP universe (OneKey) licensed from the vendor</li>
+                    <li>Omnichannel orchestration inside the suite</li>
+                    <li>Managed implementation and support</li>
+                    <li>Data flows through vendor infrastructure</li>
+                </ul>
+            </div>
+            <div class="cell">
+                <h3>LiteHCP model: your data, your server</h3>
+                <ul>
+                    <li>You supply the lists (conferences, partners, data vendors, internal systems)</li>
+                    <li>Scoring, rules, and segments computed locally in SQLite</li>
+                    <li>Deploy yourself in minutes on any PHP 8 host</li>
+                    <li>Nothing leaves your infrastructure; exports are privacy-screened CSVs</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>What you can do on day one</h2>
+        <ul>
+            <li>Import a messy CSV and impute gaps explicitly (fixed / mode / mean / flag-null) — every imputed value stays visibly marked.</li>
+            <li>Score every profile for priority (consent, recency, engagement) and data confidence (0–100).</li>
+            <li>Run JSON rules that assign personas and compliance flags — including a suppression rule for no-consent HCPs.</li>
+            <li>Build segments with safe SQL-like filters and a strict mode that demands minimum data quality.</li>
+            <li>Simulate campaign cost and ROI per segment before committing budget.</li>
+            <li>Export minimal-field CSVs; PII export is admin-gated and audited.</li>
+        </ul>
+
+        <div class="panel dark">
+            <span class="mono">no procurement cycle</span> — clone the repo or download one file, upload it to hosting you already have, and click <b>Load sample</b> to explore a realistic 200-profile dataset immediately.
+        </div>
+
+        <h2>Where IQVIA remains the right call</h2>
+        <p>If you need a continuously-verified national HCP universe, regulated omnichannel execution at scale, or contractual SLAs and managed services, an enterprise engagement is what actually delivers that. LiteHCP is deliberately small: it's the targeting bench tool, not the commercial data estate.</p>
+
+        <div class="cta-row">
+            <a class="btn" href="./demo.html">Try the live demo</a>
+            <a class="btn btn-ghost" href="./compare.html">Full comparison</a>
+        </div>
+        <p class="disclaimer">IQVIA, OCE, and OneKey are trademarks of IQVIA Inc. LiteHCP Targeter is an independent project, not affiliated with or endorsed by IQVIA. Capability summaries are indicative and based on public product descriptions.</p>
+    </article>
+    <footer>
+        <div class="container">
+            <div>LiteHCP Targeter — built by <a href="https://tanziro.com" target="_blank" rel="noopener">Tanzir</a></div>
+            <div><a href="./index.html">Home</a> · <a href="./docs.html">Docs</a> · <a href="./compare.html">Compare</a> · <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></div>
+        </div>
+    </footer>
+</body>
+</html>

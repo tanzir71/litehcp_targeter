@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Demo — LiteHCP Targeter</title>
+    <meta name="description" content="Interactive in-browser demo of LiteHCP Targeter: 200 HCP profiles, 8 enrichment rules, 5 segments, and a campaign ROI simulator. No install, no server.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tanzir71.github.io/litehcp_targeter/demo.html">
+    <meta property="og:title" content="LiteHCP Targeter — Live Demo">
+    <meta property="og:description" content="Explore the full targeting pipeline in your browser: profiles, rules, segments, ROI simulation.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c;
+            --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6; --acc:#2540ff; --acc-soft:#c8d0ff;
+            --dk-bg:#0c0d0e; --dk-ink:#f4f3ee; --dk-mute:#8e8f88; --dk-rule:#232527;
+            --ok:#1a7f37; --warn:#9a6700;
+            --f-sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+            --f-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+        }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--f-sans); font-size:14px; line-height:1.55; }
+        a { color:inherit; text-decoration:none; }
+        .container { margin:0 auto; max-width:1152px; padding:0 20px; }
+        .mono { font-family:var(--f-mono); }
+        header { position:sticky; top:0; z-index:40; border-bottom:1px solid var(--border); background:rgba(244,243,238,0.92); backdrop-filter:blur(10px); }
+        .header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; }
+        .brand { display:inline-flex; align-items:center; gap:12px; }
+        .logo { display:grid; place-items:center; width:34px; height:34px; background:var(--fg); }
+        .logo span { font-family:var(--f-mono); font-size:11px; color:var(--bg); letter-spacing:0.05em; }
+        .brand-name { font-size:14px; font-weight:600; letter-spacing:-0.02em; }
+        nav { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px; font-size:14px; }
+        .nav-link { display:inline-flex; height:36px; align-items:center; padding:0 10px; color:var(--muted); }
+        .nav-link:hover { background:var(--bg-alt); color:var(--fg); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; height:38px; padding:0 16px; border:1px solid var(--fg); background:transparent; color:var(--fg); font-size:13.5px; font-weight:550; cursor:pointer; font-family:var(--f-sans); transition:background-color .12s ease,color .12s ease,border-color .12s ease; white-space:nowrap; }
+        .btn:hover { background:var(--fg); color:var(--bg); }
+        .btn-primary { background:var(--fg); color:var(--bg); }
+        .btn-primary:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
+        .btn-sm { height:30px; padding:0 12px; font-size:12.5px; }
+        .demo-note { background:var(--dk-bg); color:var(--dk-mute); font-family:var(--f-mono); font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; padding:8px 0; }
+        .demo-note .container { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+        .demo-note b { color:var(--dk-ink); font-weight:500; }
+        .tabs { display:flex; flex-wrap:wrap; gap:2px; border-bottom:1px solid var(--border); margin-top:24px; }
+        .tab { display:inline-flex; align-items:center; height:36px; padding:0 14px; font-family:var(--f-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); border:0; border-bottom:2px solid transparent; margin-bottom:-1px; background:transparent; cursor:pointer; }
+        .tab:hover { color:var(--fg); background:var(--bg-alt); }
+        .tab.active { color:var(--fg); border-bottom-color:var(--acc); font-weight:500; }
+        .view { display:none; padding:24px 0 64px; }
+        .view.active { display:block; }
+        .h4 { font-size:20px; font-weight:650; letter-spacing:-0.02em; margin:0 0 4px; }
+        .muted { color:var(--muted); }
+        .small { font-size:12.5px; }
+        .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border); border:1px solid var(--border); margin-top:16px; }
+        @media (min-width:768px) { .cards { grid-template-columns:repeat(4,1fr); } }
+        .kcard { background:var(--panel); padding:16px 18px; }
+        .kcard .lbl { font-family:var(--f-mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted-2); }
+        .kcard .num { font-size:30px; font-weight:650; letter-spacing:-0.03em; margin-top:2px; font-variant-numeric:tabular-nums; }
+        .panel { border:1px solid var(--border); background:var(--panel); padding:16px 18px; margin-top:16px; }
+        .panel h3 { margin:0 0 10px; font-size:14.5px; font-weight:650; }
+        .two-col { display:grid; grid-template-columns:1fr; gap:16px; }
+        @media (min-width:900px) { .two-col { grid-template-columns:1fr 1fr; } }
+        .bar-row { display:flex; align-items:center; gap:10px; margin:7px 0; font-size:12.5px; }
+        .bar-row .lbl { width:140px; flex:none; font-family:var(--f-mono); font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .bar-row .track { flex:1; height:14px; background:var(--bg-alt); border:1px solid var(--border-soft); position:relative; }
+        .bar-row .fill { height:100%; background:var(--fg); }
+        .bar-row .fill.acc { background:var(--acc); }
+        .bar-row .n { width:36px; text-align:right; font-family:var(--f-mono); font-size:11px; }
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        th { font-family:var(--f-mono); font-size:10.5px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted-2); text-align:left; padding:8px 10px; border-bottom:1px solid var(--fg); white-space:nowrap; }
+        td { padding:7px 10px; border-bottom:1px solid var(--border-soft); }
+        tbody tr:hover { background:var(--bg-alt); }
+        .table-wrap { overflow-x:auto; border:1px solid var(--border); background:var(--panel); margin-top:16px; }
+        .badge { display:inline-block; padding:2px 7px; font-family:var(--f-mono); font-size:10px; font-weight:500; letter-spacing:0.07em; text-transform:uppercase; border:1px solid transparent; white-space:nowrap; }
+        .b-ok { background:var(--ok); color:#fff; }
+        .b-dark { background:var(--fg); color:var(--bg); }
+        .b-warn { background:var(--warn); color:#fff; }
+        .b-light { background:var(--panel); color:var(--fg); border-color:var(--border); }
+        .b-acc { background:var(--acc); color:#fff; }
+        .controls { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; align-items:flex-end; }
+        .field { display:flex; flex-direction:column; gap:4px; }
+        .field label { font-size:11px; font-family:var(--f-mono); letter-spacing:0.08em; text-transform:uppercase; color:var(--muted-2); }
+        select, input[type=text], input[type=number] { height:34px; padding:0 10px; border:1px solid var(--border); background:#fff; color:var(--fg); font-family:var(--f-sans); font-size:13px; border-radius:0; }
+        select:focus, input:focus { outline:none; border-color:var(--acc); box-shadow:0 0 0 2px var(--acc-soft); }
+        .num-right { text-align:right; font-variant-numeric:tabular-nums; }
+        .seg-grid { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:16px; }
+        @media (min-width:900px) { .seg-grid { grid-template-columns:repeat(5,1fr); } }
+        .seg-cell { background:var(--panel); padding:16px; cursor:pointer; border:0; text-align:left; font-family:var(--f-sans); transition:background-color .12s ease; }
+        .seg-cell:hover { background:var(--bg); }
+        .seg-cell.sel { outline:2px solid var(--acc); outline-offset:-2px; background:#fff; }
+        .seg-cell .nm { font-size:13.5px; font-weight:650; }
+        .seg-cell .ct { margin-top:6px; font-size:22px; font-weight:650; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
+        .seg-cell .fl { margin-top:6px; font-family:var(--f-mono); font-size:10.5px; color:var(--muted-2); word-break:break-word; }
+        .sim-grid { display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px; }
+        @media (min-width:900px) { .sim-grid { grid-template-columns:5fr 7fr; } }
+        .sim-out { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border); border:1px solid var(--border); }
+        @media (min-width:640px) { .sim-out { grid-template-columns:repeat(3,1fr); } }
+        .sim-cell { background:var(--panel); padding:14px 16px; }
+        .sim-cell .lbl { font-family:var(--f-mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted-2); }
+        .sim-cell .num { font-size:24px; font-weight:650; letter-spacing:-0.03em; margin-top:2px; font-variant-numeric:tabular-nums; }
+        .sim-cell .num.acc { color:var(--acc); }
+        .range-row { display:flex; align-items:center; gap:10px; margin:10px 0; }
+        .range-row label { width:170px; flex:none; font-size:12px; font-weight:600; }
+        .range-row input[type=range] { flex:1; accent-color:var(--acc); }
+        .range-row output { width:64px; text-align:right; font-family:var(--f-mono); font-size:12px; }
+        .imputed { border-bottom:2px dotted var(--acc); }
+        footer { border-top:1px solid var(--border); padding:24px 0 40px; font-size:13px; color:var(--muted); }
+        footer a { border-bottom:1px solid var(--border); }
+        footer a:hover { color:var(--fg); border-color:var(--acc); }
+        .pager { display:flex; gap:8px; align-items:center; margin-top:12px; font-size:12.5px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-inner">
+            <a class="brand" href="./index.html">
+                <div class="logo"><span>HT</span></div>
+                <span class="brand-name">LiteHCP Targeter</span>
+            </a>
+            <nav>
+                <a class="nav-link" href="./index.html">Home</a>
+                <a class="nav-link" href="./docs.html">Docs</a>
+                <a class="nav-link" href="./compare.html">Compare</a>
+                <a class="btn btn-primary" style="height:40px" href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a>
+            </nav>
+        </div>
+    </header>
+    <div class="demo-note">
+        <div class="container">
+            <span><b>Demo mode</b> · runs entirely in your browser · nothing is uploaded anywhere</span>
+            <span>dataset: <b>200 profiles · 8 rules · 5 segments</b> — identical to the app's embedded sample</span>
+        </div>
+    </div>
+    <main class="container">
+        <div class="tabs" role="tablist">
+            <button class="tab active" data-view="dashboard" role="tab">Dashboard</button>
+            <button class="tab" data-view="profiles" role="tab">Profiles</button>
+            <button class="tab" data-view="rules" role="tab">Rules</button>
+            <button class="tab" data-view="segments" role="tab">Segments</button>
+            <button class="tab" data-view="simulator" role="tab">Simulator</button>
+        </div>
+
+        <section id="view-dashboard" class="view active">
+            <h1 class="h4">Dashboard</h1>
+            <div class="muted small">Import → normalize/impute → rules enrichment → segment → simulate → export.</div>
+            <div class="cards">
+                <div class="kcard"><div class="lbl">Profiles</div><div class="num" id="k-profiles">—</div></div>
+                <div class="kcard"><div class="lbl">Rules</div><div class="num" id="k-rules">—</div></div>
+                <div class="kcard"><div class="lbl">Segments</div><div class="num" id="k-segments">—</div></div>
+                <div class="kcard"><div class="lbl">Avg priority</div><div class="num" id="k-priority">—</div></div>
+            </div>
+            <div class="two-col">
+                <div class="panel">
+                    <h3>Personas (assigned by rules)</h3>
+                    <div id="persona-bars"></div>
+                </div>
+                <div class="panel">
+                    <h3>Specialty mix</h3>
+                    <div id="specialty-bars"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Data quality</h3>
+                <div class="two-col">
+                    <div id="quality-bars"></div>
+                    <div class="small muted">Dotted values in the Profiles tab were <span class="imputed">imputed</span> during import — the engine fills gaps with a per-field strategy (fixed / mode / mean / leave-null-and-flag) and lowers the profile's confidence score so downstream segments can demand higher-quality data with <span class="mono">strict</span> mode.</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-profiles" class="view">
+            <h1 class="h4">Profiles</h1>
+            <div class="muted small">200 imported HCP profiles, scored and enriched. Click a column header to sort.</div>
+            <div class="controls">
+                <div class="field"><label>Search</label><input type="text" id="f-search" placeholder="name, org, id…"></div>
+                <div class="field"><label>Specialty</label><select id="f-specialty"><option value="">All</option></select></div>
+                <div class="field"><label>Persona</label><select id="f-persona"><option value="">All</option></select></div>
+                <div class="field"><label>Region</label><select id="f-region"><option value="">All</option></select></div>
+            </div>
+            <div class="table-wrap">
+                <table id="profiles-table">
+                    <thead><tr>
+                        <th data-sort="hcp_id">ID</th><th data-sort="name">Name</th><th data-sort="specialty">Specialty</th>
+                        <th data-sort="region">Region</th><th data-sort="organization">Organization</th><th data-sort="persona">Persona</th>
+                        <th data-sort="priority" class="num-right">Priority</th><th data-sort="confidence" class="num-right">Confidence</th>
+                    </tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="pager">
+                <button class="btn btn-sm" id="pg-prev">← Prev</button>
+                <span id="pg-info" class="mono small"></span>
+                <button class="btn btn-sm" id="pg-next">Next →</button>
+            </div>
+        </section>
+
+        <section id="view-rules" class="view">
+            <h1 class="h4">Rules</h1>
+            <div class="muted small">JSON rules evaluate in priority order. Each can set a persona, adjust scores, add tags, or stop the chain.</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Priority</th><th>Rule</th><th>Conditions</th><th>Actions</th><th class="num-right">Profiles hit</th></tr></thead>
+                    <tbody id="rules-body"></tbody>
+                </table>
+            </div>
+            <div class="panel small muted">In the real app, rules are editable JSON with a built-in tester that runs any draft rule against up to 50 live profiles before you save it.</div>
+        </section>
+
+        <section id="view-segments" class="view">
+            <h1 class="h4">Segments</h1>
+            <div class="muted small">Safe SQL-like filters over the profile table. Click a segment to preview members; export is CSV with privacy-first fields.</div>
+            <div class="seg-grid" id="seg-grid"></div>
+            <div class="controls">
+                <div class="field"><label>Mode</label>
+                    <select id="seg-mode">
+                        <option value="strict">strict — confidence ≥ 70 required</option>
+                        <option value="inclusive">inclusive — all matches</option>
+                    </select>
+                </div>
+                <button class="btn" id="seg-export">Export CSV (minimal fields)</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>ID</th><th>Specialty</th><th>Region</th><th>Persona</th><th class="num-right">Priority</th><th class="num-right">Confidence</th></tr></thead>
+                    <tbody id="seg-body"></tbody>
+                </table>
+            </div>
+            <div class="small muted" style="margin-top:8px" id="seg-note"></div>
+        </section>
+
+        <section id="view-simulator" class="view">
+            <h1 class="h4">Campaign simulator</h1>
+            <div class="muted small">Project reach, responses, cost, and ROI from a segment before spending anything. Runs are audited in the real app.</div>
+            <div class="sim-grid">
+                <div class="panel">
+                    <h3>Assumptions</h3>
+                    <div class="field" style="margin-bottom:12px"><label>Segment</label><select id="sim-segment"></select></div>
+                    <div class="range-row"><label>Contact rate</label><input type="range" id="sim-contact" min="10" max="100" value="80"><output id="o-contact">80%</output></div>
+                    <div class="range-row"><label>Response rate</label><input type="range" id="sim-response" min="1" max="40" value="12"><output id="o-response">12%</output></div>
+                    <div class="range-row"><label>Cost per contact ($)</label><input type="range" id="sim-cost" min="1" max="50" value="6"><output id="o-cost">$6</output></div>
+                    <div class="range-row"><label>Value per response ($)</label><input type="range" id="sim-value" min="10" max="500" step="10" value="100"><output id="o-value">$100</output></div>
+                </div>
+                <div>
+                    <div class="sim-out">
+                        <div class="sim-cell"><div class="lbl">Segment size</div><div class="num" id="s-size">—</div></div>
+                        <div class="sim-cell"><div class="lbl">Contacts</div><div class="num" id="s-contacts">—</div></div>
+                        <div class="sim-cell"><div class="lbl">Responses</div><div class="num" id="s-responses">—</div></div>
+                        <div class="sim-cell"><div class="lbl">Cost</div><div class="num" id="s-cost">—</div></div>
+                        <div class="sim-cell"><div class="lbl">Projected value</div><div class="num" id="s-value">—</div></div>
+                        <div class="sim-cell"><div class="lbl">ROI (value/cost)</div><div class="num acc" id="s-roi">—</div></div>
+                    </div>
+                    <div class="panel small muted">ROI = projected value ÷ cost. The real app stores every simulation run in the audit log with its assumptions, so projections used in planning are traceable later.</div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div class="container" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
+            <div>This demo mirrors the embedded sample dataset of the real app — <a href="./index.html#setup">deploy it in minutes</a>.</div>
+            <div><a href="./index.html">Home</a> · <a href="./docs.html">Docs</a> · <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></div>
+        </div>
+    </footer>
+
+    <script>
+    'use strict';
+    /* ── deterministic dataset: same LCG + pools as litehcp.php sample_csv() ── */
+    let seed = 20260612n;
+    function rand(n) { seed = (seed * 1103515245n + 12345n) % 2147483648n; return Number(seed % BigInt(Math.max(1, n))); }
+    const FIRST = ['Amira','Ben','Carla','Dinesh','Elena','Farid','Grace','Hiro','Imani','Jonas','Katya','Liam','Mei','Noor','Omar','Priya','Quinn','Rosa','Sven','Tara','Umar','Vera','Wei','Ximena','Yusuf','Zoe','Anders','Bianca','Chidi','Dalia','Emil','Fatima','Gustav','Hana','Idris','Jana','Kofi','Leila','Marco','Nadia'];
+    const LAST = ['Khan','Wu','Diaz','Patel','Sorensen','Haddad','Okafor','Tanaka','Jallow','Berg','Ivanova','Connolly','Chen','Rahman','Farouk','Iyer','Marsh','Alvarez','Lindqvist','Bose','Aziz','Petrova','Zhang','Reyes','Demir','Mertens','Holm','Ricci','Eze','Mansour','Novak','Said','Lund','Kobayashi','Toure','Kovac','Mensah','Nasser','Bianchi','Karim'];
+    const SPEC_POOL = ['oncology','oncology','oncology','cardiology','cardiology','cardiology','dermatology','dermatology','neurology','endocrinology','pediatrics','psychiatry','rheumatology','pulmonology','primary care','primary care'];
+    const REGIONS = ['West','East','Midwest','South','Northeast'];
+    const ORGS = ['Acme Health','Sunrise Clinic','Metro Hospital','Lakeside Medical Group','Northbridge Health','Cedar Valley Clinic','St. Adelhart Hospital','Riverbend Oncology Center','Harborview Cardiology','Summit Care Partners','Prairie Family Medicine','Bluestone Medical Center','Pinecrest Health Network','Westgate Specialty Group'];
+    const ROLE_POOL = ['Physician','Physician','Physician','Physician','Physician','Physician','Nurse','Nurse','Nurse Practitioner','Physician Assistant','Pharmacist'];
+    const NOW = Math.floor(Date.now() / 1000);
+
+    const profiles = [];
+    for (let i = 0; i < 200; i++) {
+        const fn = FIRST[rand(FIRST.length)], ln = LAST[rand(LAST.length)];
+        const role = ROLE_POOL[rand(ROLE_POOL.length)];
+        const prefix = role === 'Physician' ? 'Dr. ' : (role === 'Nurse' ? 'Nurse ' : '');
+        const email = rand(100) < 12 ? null : (fn + '.' + ln + (i + 1)).toLowerCase() + '@example.test';
+        const specialtyRaw = rand(100) < 6 ? null : SPEC_POOL[rand(SPEC_POOL.length)];
+        const regionRaw = rand(100) < 9 ? null : REGIONS[rand(REGIONS.length)];
+        const org = ORGS[rand(ORGS.length)];
+        const consentEmail = rand(100) < 68 ? 1 : 0;
+        const consentWeb = rand(100) < 58 ? 1 : 0;
+        let lastActivity = null;
+        if (rand(100) >= 15) { const d = Math.min(rand(365), rand(365)); lastActivity = NOW - d * 86400 - rand(86400); }
+        const imports = 1 + rand(4) + ((consentEmail && consentWeb) ? rand(5) : 0);
+        profiles.push({
+            hcp_id: 'HCP-' + (1001 + i), name: prefix + fn + ' ' + ln, email, role, org_raw: org,
+            specialty: specialtyRaw ?? 'General', specialty_imputed: specialtyRaw === null,
+            region: regionRaw ?? 'Unknown', region_imputed: regionRaw === null,
+            organization: org, consent_email: consentEmail, consent_web: consentWeb,
+            last_activity_ts: lastActivity, imports_count: imports, tags: [], persona: null, compliance: null
+        });
+    }
+
+    /* ── scoring (mirrors compute_base_priority + compute_confidence defaults) ── */
+    const RECENCY_WINDOW = 90 * 86400;
+    profiles.forEach(p => {
+        const consent01 = (p.consent_email + p.consent_web) / 2;
+        let recency01 = 0;
+        if (p.last_activity_ts) { const age = NOW - p.last_activity_ts; recency01 = Math.max(0, 1 - age / RECENCY_WINDOW); }
+        const engagement01 = Math.min(1, p.imports_count / 10);
+        p.priority = Math.round((0.30 * consent01 + 0.40 * recency01 + 0.30 * engagement01) * 100);
+        let conf = 100;
+        if (!p.email) conf -= 10;
+        if (!p.last_activity_ts) conf -= 10;
+        if (p.specialty_imputed) conf -= 6;
+        if (p.region_imputed) conf -= 6;
+        p.confidence = Math.max(0, conf);
+    });
+
+    /* ── rules (same 8 as the app) ── */
+    const recentCutoff = NOW - 30 * 86400;
+    const RULES = [
+        { p:200, name:'No consent at all => Do Not Contact', stop:true,
+          cond:x => x.consent_email===0 && x.consent_web===0,
+          condTxt:'consent_email = 0 AND consent_web = 0',
+          act:x => { x.persona='Do Not Contact'; x.priority=5; x.compliance=0; x.tags.push('no_consent','suppressed'); },
+          actTxt:'persona=Do Not Contact · priority=5 · flag=0' },
+        { p:100, name:'Oncology + email consent => Oncology Engaged',
+          cond:x => x.specialty==='oncology' && x.consent_email===1,
+          condTxt:"specialty = 'oncology' AND consent_email = 1",
+          act:x => { x.persona='Oncology Engaged'; x.priority+=15; x.compliance=1; x.tags.push('oncology','email_ok'); },
+          actTxt:'persona=Oncology Engaged · +15 · flag=1' },
+        { p:95, name:'Cardiology + email consent => Cardio Engaged',
+          cond:x => x.specialty==='cardiology' && x.consent_email===1,
+          condTxt:"specialty = 'cardiology' AND consent_email = 1",
+          act:x => { x.persona='Cardio Engaged'; x.priority+=12; x.compliance=1; x.tags.push('cardiology','email_ok'); },
+          actTxt:'persona=Cardio Engaged · +12 · flag=1' },
+        { p:80, name:'High-frequency engagers (5+ imports)',
+          cond:x => x.imports_count>=5, condTxt:'imports_count >= 5',
+          act:x => { x.priority+=10; x.tags.push('power_user'); }, actTxt:'+10 · tag power_user' },
+        { p:75, name:'Active in last 30 days => recency boost',
+          cond:x => x.last_activity_ts!==null && x.last_activity_ts>=recentCutoff, condTxt:'last_activity_ts >= now-30d',
+          act:x => { x.priority+=8; x.tags.push('recently_active'); }, actTxt:'+8 · tag recently_active' },
+        { p:60, name:'Web-only consent => Web Reachable',
+          cond:x => x.consent_email===0 && x.consent_web===1, condTxt:'consent_email = 0 AND consent_web = 1',
+          act:x => { x.persona='Web Reachable'; x.tags.push('web_only'); }, actTxt:'persona=Web Reachable' },
+        { p:55, name:'Advanced practice providers => APP tag',
+          cond:x => x.role==='Nurse Practitioner' || x.role==='Physician Assistant', condTxt:"role IN ('NP','PA')",
+          act:x => { x.priority+=5; x.tags.push('advanced_practice'); }, actTxt:'+5 · tag advanced_practice' },
+        { p:40, name:'Low engagement (single import) => cooldown',
+          cond:x => x.imports_count<=1, condTxt:'imports_count <= 1',
+          act:x => { x.priority-=8; x.tags.push('low_engagement'); }, actTxt:'−8 · tag low_engagement' },
+    ];
+    RULES.forEach(r => r.hits = 0);
+    profiles.forEach(p => {
+        for (const r of RULES) {
+            if (r.cond(p)) { r.act(p); r.hits++; if (r.stop) break; }
+        }
+        p.priority = Math.max(0, Math.min(100, p.priority));
+    });
+
+    /* ── segments (same 5 as the app) ── */
+    const SEGMENTS = [
+        { name:'Oncology — high confidence', filter:"specialty = 'oncology' AND confidence_score >= 70", fn:x => x.specialty==='oncology' && x.confidence>=70 },
+        { name:'Cardiology — engaged', filter:"specialty = 'cardiology' AND priority_score >= 60", fn:x => x.specialty==='cardiology' && x.priority>=60 },
+        { name:'Email-reachable West', filter:"consent_email = 1 AND region = 'West'", fn:x => x.consent_email===1 && x.region==='West' },
+        { name:'Power users (5+ imports)', filter:'imports_count >= 5', fn:x => x.imports_count>=5 },
+        { name:'Suppression list (Do Not Contact)', filter:"persona = 'Do Not Contact'", fn:x => x.persona==='Do Not Contact' },
+    ];
+    function segMembers(seg, mode) {
+        let m = profiles.filter(seg.fn);
+        if (mode === 'strict') m = m.filter(x => x.confidence >= 70);
+        return m.sort((a,b) => b.priority - a.priority);
+    }
+
+    /* ── helpers ── */
+    const $ = s => document.querySelector(s);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function badgeConf(c) { const cls = c>=85?'b-ok':(c>=70?'b-dark':'b-warn'); return `<span class="badge ${cls}">${c}</span>`; }
+    function badgePersona(p) { return p ? `<span class="badge ${p==='Do Not Contact'?'b-warn':'b-light'}">${esc(p)}</span>` : '<span class="muted">—</span>'; }
+
+    /* ── tabs ── */
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        $('#view-' + t.dataset.view).classList.add('active');
+    }));
+
+    /* ── dashboard ── */
+    $('#k-profiles').textContent = profiles.length;
+    $('#k-rules').textContent = RULES.length;
+    $('#k-segments').textContent = SEGMENTS.length;
+    $('#k-priority').textContent = Math.round(profiles.reduce((a,p)=>a+p.priority,0)/profiles.length);
+    function bars(el, counts, accent) {
+        const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+        const max = Math.max(...entries.map(e=>e[1]), 1);
+        el.innerHTML = entries.map(([k,v]) =>
+            `<div class="bar-row"><span class="lbl" title="${esc(k)}">${esc(k)}</span><span class="track"><span class="fill ${accent?'acc':''}" style="width:${Math.round(v/max*100)}%"></span></span><span class="n">${v}</span></div>`).join('');
+    }
+    const personaCounts = {}; profiles.forEach(p => { const k = p.persona ?? '(no persona)'; personaCounts[k] = (personaCounts[k]||0)+1; });
+    bars($('#persona-bars'), personaCounts, true);
+    const specCounts = {}; profiles.forEach(p => { specCounts[p.specialty] = (specCounts[p.specialty]||0)+1; });
+    bars($('#specialty-bars'), specCounts, false);
+    const q = {
+        'missing email': profiles.filter(p=>!p.email).length,
+        'imputed specialty': profiles.filter(p=>p.specialty_imputed).length,
+        'imputed region': profiles.filter(p=>p.region_imputed).length,
+        'no activity data': profiles.filter(p=>!p.last_activity_ts).length,
+        'confidence < 70': profiles.filter(p=>p.confidence<70).length,
+    };
+    bars($('#quality-bars'), q, true);
+
+    /* ── profiles table ── */
+    const state = { search:'', specialty:'', persona:'', region:'', sort:'priority', dir:-1, page:0, per:25 };
+    function fillSelect(id, values) {
+        const sel = $(id);
+        [...new Set(values)].sort().forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; sel.appendChild(o); });
+    }
+    fillSelect('#f-specialty', profiles.map(p=>p.specialty));
+    fillSelect('#f-persona', profiles.map(p=>p.persona ?? '(no persona)'));
+    fillSelect('#f-region', profiles.map(p=>p.region));
+    function filtered() {
+        const s = state.search.toLowerCase();
+        let rows = profiles.filter(p =>
+            (!s || (p.hcp_id + ' ' + p.name + ' ' + p.organization).toLowerCase().includes(s)) &&
+            (!state.specialty || p.specialty === state.specialty) &&
+            (!state.persona || (p.persona ?? '(no persona)') === state.persona) &&
+            (!state.region || p.region === state.region));
+        const k = state.sort;
+        rows.sort((a,b) => { const av=a[k]??'', bv=b[k]??''; return (av>bv?1:av<bv?-1:0)*state.dir; });
+        return rows;
+    }
+    function renderProfiles() {
+        const rows = filtered();
+        const pages = Math.max(1, Math.ceil(rows.length / state.per));
+        state.page = Math.min(state.page, pages - 1);
+        const slice = rows.slice(state.page*state.per, (state.page+1)*state.per);
+        $('#profiles-table tbody').innerHTML = slice.map(p => `<tr>
+            <td class="mono">${esc(p.hcp_id)}</td><td>${esc(p.name)}</td>
+            <td>${p.specialty_imputed?`<span class="imputed">${esc(p.specialty)}</span>`:esc(p.specialty)}</td>
+            <td>${p.region_imputed?`<span class="imputed">${esc(p.region)}</span>`:esc(p.region)}</td>
+            <td>${esc(p.organization)}</td><td>${badgePersona(p.persona)}</td>
+            <td class="num-right">${p.priority}</td><td class="num-right">${badgeConf(p.confidence)}</td></tr>`).join('');
+        $('#pg-info').textContent = `${rows.length} profiles · page ${state.page+1}/${pages}`;
+    }
+    $('#f-search').addEventListener('input', e => { state.search = e.target.value; state.page=0; renderProfiles(); });
+    ['specialty','persona','region'].forEach(k => $('#f-'+k).addEventListener('change', e => { state[k]=e.target.value; state.page=0; renderProfiles(); }));
+    document.querySelectorAll('#profiles-table th').forEach(th => th.addEventListener('click', () => {
+        const k = th.dataset.sort; if (state.sort===k) state.dir*=-1; else { state.sort=k; state.dir = (k==='priority'||k==='confidence')?-1:1; }
+        renderProfiles();
+    }));
+    $('#pg-prev').addEventListener('click', () => { state.page=Math.max(0,state.page-1); renderProfiles(); });
+    $('#pg-next').addEventListener('click', () => { state.page++; renderProfiles(); });
+    renderProfiles();
+
+    /* ── rules table ── */
+    $('#rules-body').innerHTML = RULES.map(r => `<tr>
+        <td class="mono">${r.p}</td><td><b>${esc(r.name)}</b>${r.stop?' <span class="badge b-dark">stops chain</span>':''}</td>
+        <td class="mono small">${esc(r.condTxt)}</td><td class="mono small">${esc(r.actTxt)}</td>
+        <td class="num-right">${r.hits}</td></tr>`).join('');
+
+    /* ── segments ── */
+    let selSeg = 0;
+    function renderSegGrid() {
+        const mode = $('#seg-mode').value;
+        $('#seg-grid').innerHTML = SEGMENTS.map((s,i) => `<button class="seg-cell ${i===selSeg?'sel':''}" data-i="${i}">
+            <div class="nm">${esc(s.name)}</div><div class="ct">${segMembers(s,mode).length}</div>
+            <div class="fl">${esc(s.filter)}</div></button>`).join('');
+        document.querySelectorAll('.seg-cell').forEach(b => b.addEventListener('click', () => { selSeg = +b.dataset.i; renderSegGrid(); }));
+        const members = segMembers(SEGMENTS[selSeg], mode);
+        $('#seg-body').innerHTML = members.slice(0,30).map(p => `<tr>
+            <td class="mono">${esc(p.hcp_id)}</td><td>${esc(p.specialty)}</td><td>${esc(p.region)}</td>
+            <td>${badgePersona(p.persona)}</td><td class="num-right">${p.priority}</td><td class="num-right">${badgeConf(p.confidence)}</td></tr>`).join('')
+            || '<tr><td colspan="6" class="muted">No members under this mode.</td></tr>';
+        $('#seg-note').textContent = members.length > 30 ? `Showing 30 of ${members.length} members. Export includes all.` : `${members.length} member(s).`;
+        renderSim();
+    }
+    $('#seg-mode').addEventListener('change', renderSegGrid);
+    $('#seg-export').addEventListener('click', () => {
+        const mode = $('#seg-mode').value;
+        const members = segMembers(SEGMENTS[selSeg], mode);
+        const head = 'hcp_id,specialty,region,persona,priority_score,confidence_score';
+        const csv = head + '\n' + members.map(p =>
+            [p.hcp_id, p.specialty, p.region, p.persona??'', p.priority, p.confidence]
+            .map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g,'""') + '"' : v).join(',')).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+        a.download = 'litehcp_demo_segment.csv';
+        a.click(); URL.revokeObjectURL(a.href);
+    });
+
+    /* ── simulator ── */
+    SEGMENTS.forEach((s,i) => { const o = document.createElement('option'); o.value = i; o.textContent = s.name; $('#sim-segment').appendChild(o); });
+    const fmt$ = n => '$' + Math.round(n).toLocaleString('en-US');
+    function renderSim() {
+        const segIdx = +$('#sim-segment').value || 0;
+        const size = segMembers(SEGMENTS[segIdx], $('#seg-mode').value).length;
+        const cr = +$('#sim-contact').value/100, rr = +$('#sim-response').value/100;
+        const cpc = +$('#sim-cost').value, vpr = +$('#sim-value').value;
+        $('#o-contact').textContent = Math.round(cr*100)+'%'; $('#o-response').textContent = Math.round(rr*100)+'%';
+        $('#o-cost').textContent = '$'+cpc; $('#o-value').textContent = '$'+vpr;
+        const contacts = Math.round(size*cr), responses = Math.round(contacts*rr);
+        const cost = contacts*cpc, value = responses*vpr;
+        $('#s-size').textContent = size; $('#s-contacts').textContent = contacts; $('#s-responses').textContent = responses;
+        $('#s-cost').textContent = fmt$(cost); $('#s-value').textContent = fmt$(value);
+        $('#s-roi').textContent = cost>0 ? (value/cost).toFixed(2)+'×' : '—';
+    }
+    ['sim-segment','sim-contact','sim-response','sim-cost','sim-value'].forEach(id => $('#'+id).addEventListener('input', renderSim));
+    renderSegGrid();
+    </script>
+</body>
+</html>
