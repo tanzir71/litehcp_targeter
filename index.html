@@ -141,6 +141,29 @@
         @media (min-width:640px) { .footer-inner { flex-direction:row; align-items:center; } }
         .footer-inner a { border-bottom:1px solid var(--border); padding-bottom:1px; }
         .footer-inner a:hover { color:var(--fg); border-color:var(--acc); }
+        /* ── mobile refinements ── */
+        .nav-cb { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+        .nav-toggle { display:none; }
+        @media (max-width:760px) {
+            .header-inner { position:relative; flex-wrap:nowrap; padding:10px 0; }
+            .nav-toggle { display:flex; flex-direction:column; justify-content:center; gap:5px; width:42px; height:38px; flex:none; cursor:pointer; border:1px solid var(--border); background:var(--panel); }
+            .nav-toggle span, .nav-toggle::before, .nav-toggle::after { content:""; display:block; width:20px; height:2px; margin:0 auto; background:var(--fg); transition:transform .2s ease, opacity .2s ease; }
+            nav { display:none; position:absolute; top:calc(100% + 1px); left:0; right:0; flex-direction:column; align-items:stretch; gap:0; padding:8px; background:var(--bg); border:1px solid var(--border); box-shadow:0 12px 30px rgba(10,10,10,.14); z-index:60; }
+            .nav-cb:checked ~ nav { display:flex; }
+            nav .nav-link { height:48px; padding:0 12px; font-size:15px; border-bottom:1px solid var(--border-soft); }
+            nav .nav-link:last-of-type { border-bottom:0; }
+            nav .btn { margin-top:8px; height:48px; }
+            .nav-cb:checked ~ .nav-toggle span { opacity:0; }
+            .nav-cb:checked ~ .nav-toggle::before { transform:translateY(7px) rotate(45deg); }
+            .nav-cb:checked ~ .nav-toggle::after { transform:translateY(-7px) rotate(-45deg); }
+            .hero-inner { padding:48px 0 44px; }
+            .hero-grid { gap:32px; }
+        }
+        @media (max-width:560px) {
+            .container { padding:0 16px; }
+            h1 { font-size:34px; }
+        }
+        @media (max-width:380px) { h1 { font-size:30px; } }
     </style>
 </head>
 <body>
@@ -151,6 +174,8 @@
                 <div class="logo"><span>HT</span></div>
                 <span class="brand-name">LiteHCP Targeter</span>
             </div>
+            <input type="checkbox" id="nav-toggle-cb" class="nav-cb" aria-hidden="true" tabindex="-1">
+            <label for="nav-toggle-cb" class="nav-toggle" role="button" aria-label="Toggle navigation menu"><span></span></label>
             <nav>
                 <a class="nav-link" href="#features">Features</a>
                 <a class="nav-link" href="#setup">Setup</a>
@@ -413,6 +438,14 @@ $ php -S localhost:8000
         {"@type":"Question","name":"What does it cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing to deploy — it runs on infrastructure you already have. No per-seat licenses, usage fees, or contracts."}}
       ]
     }
+    </script>
+    <script>
+        (function () {
+            var cb = document.getElementById('nav-toggle-cb');
+            if (!cb) return;
+            document.querySelectorAll('nav a').forEach(function (a) { a.addEventListener('click', function () { cb.checked = false; }); });
+            document.addEventListener('click', function (e) { if (cb.checked && !e.target.closest('header')) cb.checked = false; });
+        })();
     </script>
 </body>
 </html>

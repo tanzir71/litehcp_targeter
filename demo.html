@@ -40,6 +40,8 @@
         .btn-primary { background:var(--fg); color:var(--bg); }
         .btn-primary:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
         .btn-sm { height:30px; padding:0 12px; font-size:12.5px; }
+        .btn:disabled { opacity:.4; cursor:not-allowed; }
+        .btn:disabled:hover { background:transparent; color:var(--fg); }
         .btn-danger { border-color:var(--danger); color:var(--danger); }
         .btn-danger:hover { background:var(--danger); border-color:var(--danger); color:#fff; }
         .demo-note { background:var(--dk-bg); color:var(--dk-mute); font-family:var(--f-mono); font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; padding:8px 0; }
@@ -114,6 +116,25 @@
         .range-row input[type=range] { flex:1; accent-color:var(--acc); }
         .range-row output { width:64px; text-align:right; font-family:var(--f-mono); font-size:12px; }
         .imputed { border-bottom:2px dotted var(--acc); }
+        /* ── spreadsheet-style editing grid ── */
+        #profiles-table.grid { table-layout:auto; }
+        #profiles-table.grid td.cell { cursor:cell; position:relative; user-select:none; }
+        #profiles-table.grid td.cell:hover { background:var(--bg-alt); box-shadow:inset 0 0 0 1px var(--border); }
+        #profiles-table.grid td.ro { color:var(--muted); background:repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(0,0,0,.012) 5px,rgba(0,0,0,.012) 6px); }
+        #profiles-table.grid td.sel { box-shadow:inset 0 0 0 2px var(--acc); background:#fff; }
+        #profiles-table.grid tbody tr:hover { background:transparent; }
+        #profiles-table.grid td .cell-input { width:100%; border:none; outline:none; background:#fff; font:inherit; font-size:13px; color:var(--fg); padding:0; margin:0; }
+        #profiles-table.grid td .cell-input.mono { font-family:var(--f-mono); }
+        .toggle-pill { display:inline-block; min-width:30px; text-align:center; padding:1px 8px; font-family:var(--f-mono); font-size:10px; font-weight:600; letter-spacing:0.06em; border:1px solid var(--border); cursor:pointer; }
+        .toggle-pill.on { background:var(--ok); color:#fff; border-color:var(--ok); }
+        .toggle-pill.off { background:var(--panel); color:var(--faint); }
+        .grid-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:14px; }
+        .grid-hint { font-size:11.5px; color:var(--muted-2); font-family:var(--f-mono); margin-top:8px; }
+        .grid-hint .kbd { border:1px solid var(--border); padding:0 5px; border-radius:3px; background:var(--panel); font-size:10.5px; }
+        .col-del { cursor:pointer; color:var(--faint); font-family:var(--f-mono); font-size:12px; padding-left:6px; }
+        .col-del:hover { color:var(--danger); }
+        .row-del { cursor:pointer; color:var(--faint); font-family:var(--f-mono); border:none; background:none; font-size:14px; line-height:1; padding:2px 6px; }
+        .row-del:hover { color:var(--danger); }
         footer { border-top:1px solid var(--border); padding:24px 0 40px; font-size:13px; color:var(--muted); }
         footer a { border-bottom:1px solid var(--border); }
         footer a:hover { color:var(--fg); border-color:var(--acc); }
@@ -129,6 +150,32 @@
         .hint { font-size:12px; color:var(--muted-2); font-family:var(--f-mono); }
         .toast-box { position:fixed; bottom:16px; right:16px; z-index:90; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
         .toastd { background:var(--dk-bg); color:var(--dk-ink); font-size:13px; padding:10px 14px; border:1px solid var(--dk-rule); box-shadow:0 6px 24px rgba(10,10,10,.18); }
+        /* ── mobile refinements ── */
+        .nav-cb { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+        .nav-toggle { display:none; }
+        @media (max-width:760px) {
+            .header-inner { position:relative; flex-wrap:nowrap; padding:10px 0; }
+            .nav-toggle { display:flex; flex-direction:column; justify-content:center; gap:5px; width:42px; height:38px; flex:none; cursor:pointer; border:1px solid var(--border); background:var(--panel); }
+            .nav-toggle span, .nav-toggle::before, .nav-toggle::after { content:""; display:block; width:20px; height:2px; margin:0 auto; background:var(--fg); transition:transform .2s ease, opacity .2s ease; }
+            nav { display:none; position:absolute; top:calc(100% + 1px); left:0; right:0; flex-direction:column; align-items:stretch; gap:0; padding:8px; background:var(--bg); border:1px solid var(--border); box-shadow:0 12px 30px rgba(10,10,10,.14); z-index:60; }
+            .nav-cb:checked ~ nav { display:flex; }
+            nav .nav-link { height:48px; padding:0 12px; font-size:15px; border-bottom:1px solid var(--border-soft); }
+            nav .btn { margin-top:8px; height:48px !important; }
+            .nav-cb:checked ~ .nav-toggle span { opacity:0; }
+            .nav-cb:checked ~ .nav-toggle::before { transform:translateY(7px) rotate(45deg); }
+            .nav-cb:checked ~ .nav-toggle::after { transform:translateY(-7px) rotate(-45deg); }
+            /* tabs become a single swipeable strip instead of wrapping */
+            .tabs { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+            .tabs::-webkit-scrollbar { display:none; }
+            .tab { flex:0 0 auto; }
+            .view { padding:20px 0 48px; }
+        }
+        @media (max-width:560px) {
+            .container { padding:0 14px; }
+            .demo-note .container { font-size:11px; }
+            .range-row label { width:118px; font-size:11px; }
+            .grid-hint { font-size:10.5px; }
+        }
     </style>
 </head>
 <body>
@@ -138,6 +185,8 @@
                 <div class="logo"><span>HT</span></div>
                 <span class="brand-name">LiteHCP Targeter</span>
             </a>
+            <input type="checkbox" id="nav-toggle-cb" class="nav-cb" aria-hidden="true" tabindex="-1">
+            <label for="nav-toggle-cb" class="nav-toggle" role="button" aria-label="Toggle navigation menu"><span></span></label>
             <nav>
                 <a class="nav-link" href="./index.html">Home</a>
                 <a class="nav-link" href="./docs.html">Docs</a>
@@ -236,15 +285,28 @@
 
         <section id="view-profiles" class="view">
             <h1 class="h4">Profiles</h1>
-            <div class="muted small" id="profiles-sub">Scored and enriched. Click a column header to sort.</div>
+            <div class="muted small" id="profiles-sub">Editable grid — click any cell to edit, like a spreadsheet. Persona, Priority and Confidence are computed and recompute live as you type.</div>
             <div class="controls">
                 <div class="field"><label>Search</label><input type="text" id="f-search" placeholder="name, org, id…"></div>
                 <div class="field"><label>Specialty</label><select id="f-specialty"></select></div>
                 <div class="field"><label>Persona</label><select id="f-persona"></select></div>
                 <div class="field"><label>Region</label><select id="f-region"></select></div>
             </div>
+            <div class="grid-toolbar">
+                <button class="btn btn-sm btn-primary" id="grid-add-row">+ Add HCP</button>
+                <button class="btn btn-sm" id="grid-add-field">+ Add custom field</button>
+                <button class="btn btn-sm" id="grid-undo" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+                <button class="btn btn-sm" id="grid-redo" disabled title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
+                <button class="btn btn-sm" id="grid-export" title="Download all profiles as CSV">⇩ Export CSV</button>
+                <datalist id="dl-specialty"></datalist>
+                <datalist id="dl-region"></datalist>
+                <datalist id="dl-role"></datalist>
+            </div>
+            <div class="grid-hint">
+                <span class="kbd">click</span> select · <span class="kbd">Enter</span>/dbl-click edit · <span class="kbd">Tab</span> next · <span class="kbd">Esc</span> cancel · <span class="kbd">↑↓←→</span> move · <span class="kbd">Del</span> clear · <span class="kbd">Space</span> toggle consent
+            </div>
             <div class="table-wrap">
-                <table id="profiles-table">
+                <table id="profiles-table" class="grid">
                     <thead><tr></tr></thead>
                     <tbody></tbody>
                 </table>
@@ -565,12 +627,42 @@
 
     /* ════════ state + persistence ════════ */
     let state = { profiles: [], rules: [], segments: [], source: 'sample', fileName: '' };
+    function slimProfile(p) {
+        return { hcp_id: p.hcp_id, name: p.name, email: p.email,
+            specialty: p.imputed.specialty ? null : p.specialty, region: p.imputed.region ? null : p.region,
+            organization: p.imputed.organization ? null : p.organization, role: p.imputed.role ? null : p.role,
+            consent_email: p.consent_email, consent_web: p.consent_web,
+            last_activity_ts: p.last_activity_ts, imports_count: p.imports_count, custom: p.custom };
+    }
+    function currentPayload() {
+        return JSON.stringify({ profiles: state.profiles.map(slimProfile), rules: state.rules.map(({ hits, ...r }) => r), segments: state.segments, source: state.source, fileName: state.fileName });
+    }
+    /* ── undo / redo: every persist() (i.e. every mutation) records a history step ── */
+    let undoStack = [], redoStack = [], committedSnap = null, suppressHistory = false;
     function persist() {
         try {
-            const slim = state.profiles.map(p => ({ hcp_id:p.hcp_id, name:p.name, email:p.email, specialty:p.imputed.specialty?null:p.specialty, region:p.imputed.region?null:p.region, organization:p.imputed.organization?null:p.organization, role:p.imputed.role?null:p.role, consent_email:p.consent_email, consent_web:p.consent_web, last_activity_ts:p.last_activity_ts, imports_count:p.imports_count, custom:p.custom }));
-            localStorage.setItem(LS_KEY, JSON.stringify({ profiles: slim, rules: state.rules.map(({hits, ...r}) => r), segments: state.segments, source: state.source, fileName: state.fileName }));
+            const payload = currentPayload();
+            localStorage.setItem(LS_KEY, payload);
+            if (!suppressHistory) {
+                if (committedSnap !== null && committedSnap !== payload) {
+                    undoStack.push(committedSnap);
+                    if (undoStack.length > 80) undoStack.shift();
+                    redoStack.length = 0;
+                }
+                committedSnap = payload;
+                updateUndoButtons();
+            }
         } catch (e) { toast('Could not persist to localStorage: ' + e.message); }
     }
+    function restoreSnap(payload) {
+        const s = JSON.parse(payload);
+        state = { profiles: s.profiles.map(makeProfile), rules: s.rules, segments: s.segments, source: s.source || 'csv', fileName: s.fileName || '' };
+        suppressHistory = true; recomputeAll(); persist(); suppressHistory = false;
+        committedSnap = payload; gState.r = -1; renderAll();
+    }
+    function undo() { if (!undoStack.length) return; redoStack.push(committedSnap); restoreSnap(undoStack.pop()); updateUndoButtons(); toast('Undo'); }
+    function redo() { if (!redoStack.length) return; undoStack.push(committedSnap); restoreSnap(redoStack.pop()); updateUndoButtons(); toast('Redo'); }
+    function updateUndoButtons() { const u = $('#grid-undo'), r = $('#grid-redo'); if (u) u.disabled = !undoStack.length; if (r) r.disabled = !redoStack.length; }
     function loadState() {
         try {
             const raw = localStorage.getItem(LS_KEY);
@@ -676,7 +768,7 @@
     function customFieldNames() {
         const s = new Set();
         state.profiles.forEach(p => Object.keys(p.custom).forEach(k => s.add(k)));
-        return [...s].slice(0, 4);
+        return [...s];
     }
     function badgeConf(c) { const cls = c >= 85 ? 'b-ok' : (c >= 70 ? 'b-dark' : 'b-warn'); return `<span class="badge ${cls}">${c}</span>`; }
     function badgePersona(p) { return p ? `<span class="badge ${p === 'Do Not Contact' ? 'b-warn' : 'b-light'}">${esc(p)}</span>` : '<span class="muted">—</span>'; }
@@ -717,12 +809,64 @@
         fill('#f-persona', state.profiles.map(p => p.persona ?? '(no persona)'));
         fill('#f-region', state.profiles.map(p => p.region));
     }
+    /* ── editable-grid state ── */
+    const gState = { r: -1, c: 0, editing: false };   // r = page-row index, c = editable-column index
+    let gridCols = [], gridRowProfiles = [], gWantScroll = false, editCtx = null;
+    function gridColumns(customs) {
+        const base = [
+            { key: 'name', type: 'text', label: 'Name', sort: 'name' },
+            { key: 'email', type: 'text', label: 'Email', sort: 'email' },
+            { key: 'specialty', type: 'enum', label: 'Specialty', sort: 'specialty', dl: 'dl-specialty' },
+            { key: 'region', type: 'enum', label: 'Region', sort: 'region', dl: 'dl-region' },
+            { key: 'organization', type: 'text', label: 'Organization', sort: 'organization' },
+            { key: 'role', type: 'enum', label: 'Role', sort: 'role', dl: 'dl-role' },
+            { key: 'consent_email', type: 'toggle', label: 'C·Email', sort: 'consent_email' },
+            { key: 'consent_web', type: 'toggle', label: 'C·Web', sort: 'consent_web' },
+            { key: 'imports_count', type: 'num', label: 'Imports', sort: 'imports_count' },
+        ];
+        return base.concat(customs.map(c => ({ key: 'custom:' + c, type: 'custom', label: c, sort: 'custom:' + c, custom: c })));
+    }
+    function profileToSrc(p) {
+        return {
+            hcp_id: p.hcp_id, name: p.name, email: p.email,
+            specialty: p.imputed.specialty ? null : p.specialty,
+            region: p.imputed.region ? null : p.region,
+            organization: p.imputed.organization ? null : p.organization,
+            role: p.imputed.role ? null : p.role,
+            consent_email: p.consent_email, consent_web: p.consent_web,
+            last_activity_ts: p.last_activity_ts, imports_count: p.imports_count,
+            custom: { ...p.custom },
+        };
+    }
+    function cellEl(r, c) { return document.querySelector(`#profiles-table td[data-r="${r}"][data-c="${c}"]`); }
+    function cellDisplay(p, col) {
+        if (col.type === 'toggle') { const on = p[col.key] == 1; return `<span class="toggle-pill ${on ? 'on' : 'off'}">${on ? 'YES' : 'NO'}</span>`; }
+        if (col.custom !== undefined) { const v = p.custom[col.custom]; return (v === undefined || v === '') ? '<span class="muted">—</span>' : esc(v); }
+        let v = p[col.key];
+        if (col.key === 'email' && !v) return '<span class="muted">—</span>';
+        if (['specialty', 'region', 'organization', 'role'].includes(col.key) && p.imputed[col.key]) return `<span class="imputed">${esc(v)}</span>`;
+        return esc(v ?? '');
+    }
+    function rawVal(p, col) {
+        if (col.custom !== undefined) return p.custom[col.custom] ?? '';
+        if (['specialty', 'region', 'organization', 'role'].includes(col.key) && p.imputed[col.key]) return '';
+        if (col.key === 'email') return p.email ?? '';
+        return p[col.key] ?? '';
+    }
+    function fillDatalist(id, values) {
+        const dl = $('#' + id); if (!dl) return;
+        dl.innerHTML = [...new Set(values.filter(Boolean))].sort().map(v => `<option value="${esc(v)}">`).join('');
+    }
     function renderProfiles() {
         const customs = customFieldNames();
+        gridCols = gridColumns(customs);
+        fillDatalist('dl-specialty', state.profiles.map(p => p.imputed.specialty ? null : p.specialty));
+        fillDatalist('dl-region', state.profiles.map(p => p.imputed.region ? null : p.region));
+        fillDatalist('dl-role', state.profiles.map(p => p.imputed.role ? null : p.role));
         $('#profiles-table thead tr').innerHTML =
-            `<th data-sort="hcp_id">ID</th><th data-sort="name">Name</th><th data-sort="specialty">Specialty</th><th data-sort="region">Region</th><th data-sort="organization">Organization</th>` +
-            customs.map(c => `<th class="num-right" data-sort="custom:${esc(c)}">${esc(c)} <span class="badge b-light">custom</span></th>`).join('') +
-            `<th data-sort="persona">Persona</th><th data-sort="priority" class="num-right">Priority</th><th data-sort="confidence" class="num-right">Confidence</th>`;
+            `<th data-sort="hcp_id">ID</th>` +
+            gridCols.map(col => `<th data-sort="${col.sort}"${col.type === 'num' || col.type === 'toggle' ? ' class="num-right"' : ''}>${esc(col.label)}${col.custom !== undefined ? ` <span class="badge b-light">custom <span class="col-del" data-del-field="${esc(col.custom)}" title="remove field">✕</span></span>` : ''}</th>`).join('') +
+            `<th data-sort="persona">Persona</th><th data-sort="priority" class="num-right">Priority</th><th data-sort="confidence" class="num-right">Confidence</th><th></th>`;
         bindSort();
         const s = tState.search.toLowerCase();
         let rows = state.profiles.filter(p =>
@@ -736,23 +880,257 @@
         const pages = Math.max(1, Math.ceil(rows.length / tState.per));
         tState.page = Math.min(tState.page, pages - 1);
         const slice = rows.slice(tState.page * tState.per, (tState.page + 1) * tState.per);
-        $('#profiles-table tbody').innerHTML = slice.map(p => `<tr>
-            <td class="mono">${esc(p.hcp_id)}</td><td>${esc(p.name)}</td>
-            <td>${p.imputed.specialty ? `<span class="imputed">${esc(p.specialty)}</span>` : esc(p.specialty)}</td>
-            <td>${p.imputed.region ? `<span class="imputed">${esc(p.region)}</span>` : esc(p.region)}</td>
-            <td>${esc(p.organization)}</td>` +
-            customs.map(c => `<td class="num-right mono small">${esc(p.custom[c] ?? '—')}</td>`).join('') +
-            `<td>${badgePersona(p.persona)}</td>
-            <td class="num-right">${p.priority}</td><td class="num-right">${badgeConf(p.confidence)}</td></tr>`).join('') || '<tr><td colspan="12" class="muted">No matching profiles.</td></tr>';
+        gridRowProfiles = slice;
+        const total = 1 + gridCols.length + 4;
+        $('#profiles-table tbody').innerHTML = slice.map((p, r) => `<tr>
+            <td class="mono ro">${esc(p.hcp_id)}</td>` +
+            gridCols.map((col, c) => `<td class="cell ${col.type === 'num' || col.type === 'toggle' ? 'num-right ' : ''}${col.custom !== undefined ? 'mono small' : ''}" data-r="${r}" data-c="${c}">${cellDisplay(p, col)}</td>`).join('') +
+            `<td class="ro">${badgePersona(p.persona)}</td>
+            <td class="num-right ro">${p.priority}</td><td class="num-right ro">${badgeConf(p.confidence)}</td>
+            <td class="num-right"><button class="row-del" data-del-row="${r}" title="delete row">×</button></td></tr>`).join('')
+            || `<tr><td colspan="${total}" class="muted">No matching profiles.</td></tr>`;
+        document.querySelectorAll('#profiles-table td.cell').forEach(td => {
+            const r = +td.dataset.r, c = +td.dataset.c;
+            td.onclick = () => {
+                const col = gridCols[c];
+                if (col && col.type === 'toggle') { gState.r = r; gState.c = c; gWantScroll = true; toggleCell(gridRowProfiles[r], col); return; }
+                if (gState.r === r && gState.c === c && !gState.editing) { beginEdit(); }
+                else { gState.r = r; gState.c = c; gWantScroll = true; applySelection(); }
+            };
+            td.ondblclick = () => { gState.r = r; gState.c = c; gWantScroll = true; beginEdit(); };
+        });
+        document.querySelectorAll('#profiles-table [data-del-row]').forEach(b => b.onclick = e => { e.stopPropagation(); deleteRow(gridRowProfiles[+b.dataset.delRow]); });
+        document.querySelectorAll('#profiles-table [data-del-field]').forEach(b => b.onclick = e => { e.stopPropagation(); e.preventDefault(); deleteField(b.dataset.delField); });
         $('#pg-info').textContent = `${rows.length} profiles · page ${tState.page + 1}/${pages}`;
-        $('#profiles-sub').textContent = customs.length ? `Scored and enriched. Custom fields detected: ${customs.join(', ')}. Click a column header to sort.` : 'Scored and enriched. Click a column header to sort.';
+        $('#profiles-sub').textContent = customs.length
+            ? `Editable grid — click any cell to edit. Custom fields: ${customs.join(', ')}. Persona/Priority/Confidence recompute live.`
+            : 'Editable grid — click any cell to edit. Persona/Priority/Confidence recompute live.';
+        if (gState.r >= 0 && !gState.editing) {
+            gState.r = Math.max(0, Math.min(gState.r, gridRowProfiles.length - 1));
+            gState.c = Math.max(0, Math.min(gState.c, gridCols.length - 1));
+            applySelection();
+        }
     }
     function bindSort() {
-        document.querySelectorAll('#profiles-table th').forEach(th => th.onclick = () => {
+        document.querySelectorAll('#profiles-table th').forEach(th => th.onclick = e => {
+            if (e.target.dataset.delField !== undefined) return;
             const k = th.dataset.sort; if (!k) return;
-            if (tState.sort === k) tState.dir *= -1; else { tState.sort = k; tState.dir = (k === 'priority' || k === 'confidence' || k.startsWith('custom:')) ? -1 : 1; }
+            if (tState.sort === k) tState.dir *= -1; else { tState.sort = k; tState.dir = (k === 'priority' || k === 'confidence' || k === 'imports_count' || k.startsWith('custom:') || k.startsWith('consent')) ? -1 : 1; }
             renderProfiles();
         });
+    }
+    function applySelection() {
+        document.querySelectorAll('#profiles-table td.sel').forEach(td => td.classList.remove('sel'));
+        if (gState.r < 0 || gState.editing) return;
+        const td = cellEl(gState.r, gState.c);
+        if (td) { td.classList.add('sel'); if (gWantScroll) { td.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } }
+        gWantScroll = false;
+    }
+    function liveUpdate() { recomputeAll(); persist(); renderAll(); }
+    function move(dr, dc) {
+        if (gState.r < 0) return;
+        gState.r = Math.max(0, Math.min(gState.r + dr, gridRowProfiles.length - 1));
+        gState.c = Math.max(0, Math.min(gState.c + dc, gridCols.length - 1));
+        gWantScroll = true; applySelection();
+    }
+    function beginEdit(seed) {
+        const col = gridCols[gState.c], p = gridRowProfiles[gState.r];
+        if (!col || !p) return;
+        if (col.type === 'toggle') { toggleCell(p, col); return; }
+        const td = cellEl(gState.r, gState.c); if (!td) return;
+        gState.editing = true; editCtx = { p, col };
+        const cur = seed != null ? seed : rawVal(p, col);
+        const dl = col.dl ? ` list="${col.dl}"` : '';
+        const monoCls = (col.custom !== undefined || col.type === 'enum') ? ' mono' : '';
+        const type = col.type === 'num' ? ' inputmode="numeric"' : '';
+        td.innerHTML = `<input class="cell-input${monoCls}"${dl}${type} value="${esc(cur)}">`;
+        const inp = td.querySelector('input');
+        inp.focus();
+        if (seed == null) inp.select(); else inp.setSelectionRange(inp.value.length, inp.value.length);
+        inp.addEventListener('keydown', onEditKey);
+        inp.addEventListener('blur', () => { if (gState.editing) commitEdit(null); });
+    }
+    function onEditKey(e) {
+        if (['Enter', 'Tab', 'Escape'].includes(e.key)) e.stopPropagation();
+        if (e.key === 'Enter') { e.preventDefault(); commitEdit('down'); }
+        else if (e.key === 'Tab') { e.preventDefault(); commitEdit(e.shiftKey ? 'left' : 'right'); }
+        else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+    }
+    function applyEdit(p, col, val) {
+        const idx = state.profiles.indexOf(p); if (idx < 0) return false;
+        const src = profileToSrc(p);
+        if (col.custom !== undefined) {
+            const v = String(val).trim();
+            if (v === '') delete src.custom[col.custom];
+            else src.custom[col.custom] = isNaN(v) ? v : Number(v);
+        } else switch (col.key) {
+            case 'name': if (!String(val).trim()) return false; src.name = String(val).trim(); break;
+            case 'email': src.email = String(val).trim() || null; break;
+            case 'specialty': case 'region': case 'organization': case 'role': src[col.key] = String(val).trim() || null; break;
+            case 'imports_count': src.imports_count = parseInt(val, 10) || 0; break;
+            default: src[col.key] = val;
+        }
+        state.profiles[idx] = makeProfile(src);
+        return true;
+    }
+    function commitEdit(moveTo) {
+        if (!gState.editing) return;
+        const td = cellEl(gState.r, gState.c);
+        const inp = td && td.querySelector('input');
+        const val = inp ? inp.value : '';
+        gState.editing = false;
+        applyEdit(editCtx.p, editCtx.col, val);
+        if (moveTo === 'down') gState.r++;
+        else if (moveTo === 'right') gState.c++;
+        else if (moveTo === 'left') gState.c--;
+        gWantScroll = true;
+        liveUpdate();
+    }
+    function cancelEdit() { gState.editing = false; gWantScroll = true; renderProfiles(); }
+    function toggleCell(p, col) {
+        const idx = state.profiles.indexOf(p); if (idx < 0) return;
+        const src = profileToSrc(p);
+        src[col.key] = p[col.key] == 1 ? 0 : 1;
+        state.profiles[idx] = makeProfile(src);
+        gWantScroll = true; liveUpdate();
+    }
+    function clearCell() {
+        const col = gridCols[gState.c], p = gridRowProfiles[gState.r];
+        if (!col || !p) return;
+        if (col.type === 'toggle') { const idx = state.profiles.indexOf(p); const src = profileToSrc(p); src[col.key] = 0; state.profiles[idx] = makeProfile(src); }
+        else applyEdit(p, col, '');
+        gWantScroll = true; liveUpdate();
+    }
+    function deleteRow(p) {
+        const idx = state.profiles.indexOf(p); if (idx < 0) return;
+        state.profiles.splice(idx, 1);
+        liveUpdate();
+        toast('Row deleted (' + state.profiles.length + ' remaining)');
+    }
+    function resetFilters() {
+        tState.search = tState.specialty = tState.persona = tState.region = ''; tState.page = 0;
+        $('#f-search').value = '';
+        ['specialty', 'persona', 'region'].forEach(key => { const s = $('#f-' + key); if (s) s.value = ''; });
+    }
+    function addRow() {
+        let n = 1, id;
+        do { id = 'HCP-NEW-' + n; n++; } while (state.profiles.some(p => p.hcp_id === id));
+        const p = makeProfile({ hcp_id: id, name: 'New HCP' });
+        state.profiles.unshift(p);
+        resetFilters();
+        tState.sort = 'hcp_id'; tState.dir = -1;
+        recomputeAll(); persist(); renderAll();
+        const r = gridRowProfiles.indexOf(p);
+        if (r >= 0) { gState.r = r; gState.c = 0; gWantScroll = true; beginEdit(); }
+        toast('Added blank HCP — fill in the cells');
+    }
+    function addField() {
+        const raw = (typeof prompt === 'function') ? prompt('Custom field name (letters, numbers, underscore):', '') : null;
+        if (raw === null) return;
+        const name = String(raw).toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
+        if (!name) { toast('Invalid field name'); return; }
+        if (INTERNAL.includes(name)) { toast('"' + name + '" is a standard field'); return; }
+        if (state.profiles.some(p => name in p.custom)) { toast('Field "' + name + '" already exists'); return; }
+        state.profiles.forEach(p => { p.custom[name] = ''; });
+        persist(); renderAll();
+        toast('Added custom field "' + name + '" — click cells to fill it');
+    }
+    function deleteField(name) {
+        if (typeof confirm === 'function' && !confirm('Remove custom field "' + name + '" from all profiles?')) return;
+        state.profiles.forEach(p => { delete p.custom[name]; });
+        liveUpdate();
+        toast('Removed custom field "' + name + '"');
+    }
+    function onGridKey(e) {
+        const pv = document.querySelector('#view-profiles');
+        if (!pv || !pv.classList.contains('active') || gState.editing) return;
+        const ae = document.activeElement;
+        if (ae && ['INPUT', 'SELECT', 'TEXTAREA'].includes(ae.tagName)) return;
+        if (gState.r < 0) {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) { gState.r = 0; gState.c = 0; gWantScroll = true; applySelection(); e.preventDefault(); }
+            return;
+        }
+        switch (e.key) {
+            case 'ArrowUp': move(-1, 0); e.preventDefault(); break;
+            case 'ArrowDown': move(1, 0); e.preventDefault(); break;
+            case 'ArrowLeft': move(0, -1); e.preventDefault(); break;
+            case 'ArrowRight': move(0, 1); e.preventDefault(); break;
+            case 'Tab': e.preventDefault(); move(0, e.shiftKey ? -1 : 1); break;
+            case 'Enter': case 'F2': e.preventDefault(); beginEdit(); break;
+            case 'Backspace': case 'Delete': e.preventDefault(); clearCell(); break;
+            case ' ': {
+                e.preventDefault();
+                const col = gridCols[gState.c];
+                if (col && col.type === 'toggle') toggleCell(gridRowProfiles[gState.r], col); else beginEdit();
+                break;
+            }
+            default:
+                if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); beginEdit(e.key); }
+        }
+    }
+    /* ── clipboard: copy a cell, paste a block straight from Excel/Sheets (TSV) ── */
+    function profilesActive() { const v = document.querySelector('#view-profiles'); return v && v.classList.contains('active'); }
+    function copyCellText() {
+        const col = gridCols[gState.c], p = gridRowProfiles[gState.r];
+        if (!col || !p) return null;
+        if (col.custom !== undefined) return String(p.custom[col.custom] ?? '');
+        return String(p[col.key] ?? '');
+    }
+    function onCopy(e) {
+        if (!profilesActive() || gState.editing || gState.r < 0) return;
+        const txt = copyCellText(); if (txt == null) return;
+        e.clipboardData.setData('text/plain', txt); e.preventDefault();
+    }
+    function onPaste(e) {
+        if (!profilesActive() || gState.editing || gState.r < 0) return;
+        const txt = (e.clipboardData || window.clipboardData).getData('text'); if (!txt) return;
+        e.preventDefault(); pasteText(txt);
+    }
+    function pasteText(text) {
+        const snap = committedSnap;
+        const grid2 = text.replace(/\r/g, '').replace(/\n$/, '').split('\n').map(r => r.split('\t'));
+        let changed = false;
+        grid2.forEach((cells, i) => {
+            const p = gridRowProfiles[gState.r + i]; if (!p) return;
+            const idx = state.profiles.indexOf(p); if (idx < 0) return;
+            const src = profileToSrc(p); let rowChanged = false;
+            cells.forEach((val, j) => {
+                const col = gridCols[gState.c + j]; if (!col) return;
+                val = String(val);
+                if (col.custom !== undefined) { const v = val.trim(); if (v === '') delete src.custom[col.custom]; else src.custom[col.custom] = isNaN(v) ? v : Number(v); rowChanged = true; }
+                else switch (col.key) {
+                    case 'name': if (val.trim()) { src.name = val.trim(); rowChanged = true; } break;
+                    case 'email': src.email = val.trim() || null; rowChanged = true; break;
+                    case 'specialty': case 'region': case 'organization': case 'role': src[col.key] = val.trim() || null; rowChanged = true; break;
+                    case 'consent_email': case 'consent_web': src[col.key] = boolish(val); rowChanged = true; break;
+                    case 'imports_count': src.imports_count = parseInt(val, 10) || 0; rowChanged = true; break;
+                    default: src[col.key] = val; rowChanged = true;
+                }
+            });
+            if (rowChanged) { state.profiles[idx] = makeProfile(src); changed = true; }
+        });
+        if (changed) { gWantScroll = true; liveUpdate(); toast('Pasted ' + grid2.length + ' row(s)'); }
+        else if (snap) { /* nothing changed */ }
+    }
+    function buildProfilesCSV() {
+        const customs = customFieldNames();
+        const head = ['hcp_id', 'name', 'email', 'specialty', 'region', 'organization', 'role', 'consent_email', 'consent_web', 'last_activity_ts', 'imports_count', 'persona', 'priority_score', 'confidence_score', ...customs.map(c => 'custom.' + c)];
+        const q = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
+        const lines = state.profiles.map(p => [p.hcp_id, p.name, p.email ?? '', p.imputed.specialty ? '' : p.specialty, p.imputed.region ? '' : p.region, p.imputed.organization ? '' : p.organization, p.imputed.role ? '' : p.role, p.consent_email, p.consent_web, p.last_activity_ts ?? '', p.imports_count, p.persona ?? '', p.priority, p.confidence, ...customs.map(c => p.custom[c] ?? '')].map(q).join(','));
+        return head.join(',') + '\n' + lines.join('\n');
+    }
+    function downloadCSV(name, csv) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = name; a.click(); URL.revokeObjectURL(a.href);
+    }
+    function onUndoKey(e) {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        const ae = document.activeElement;
+        if (ae && ['INPUT', 'SELECT', 'TEXTAREA'].includes(ae.tagName)) return;
+        const k = e.key.toLowerCase();
+        if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+        else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
     }
 
     /* rules */
@@ -868,6 +1246,15 @@
     ['specialty', 'persona', 'region'].forEach(k => $('#f-' + k).addEventListener('change', e => { tState[k] = e.target.value; tState.page = 0; renderProfiles(); }));
     $('#pg-prev').addEventListener('click', () => { tState.page = Math.max(0, tState.page - 1); renderProfiles(); });
     $('#pg-next').addEventListener('click', () => { tState.page++; renderProfiles(); });
+    $('#grid-add-row').addEventListener('click', addRow);
+    $('#grid-add-field').addEventListener('click', addField);
+    $('#grid-undo').addEventListener('click', undo);
+    $('#grid-redo').addEventListener('click', redo);
+    $('#grid-export').addEventListener('click', () => downloadCSV('litehcp_profiles.csv', buildProfilesCSV()));
+    document.addEventListener('keydown', onGridKey);
+    document.addEventListener('keydown', onUndoKey);
+    document.addEventListener('copy', onCopy);
+    document.addEventListener('paste', onPaste);
 
     $('#csv-file').addEventListener('change', e => {
         const f = e.target.files[0]; if (!f) return;
@@ -921,6 +1308,16 @@
     loadState();
     recomputeAll();
     renderAll();
+    committedSnap = currentPayload();
+    updateUndoButtons();
+    </script>
+    <script>
+        (function () {
+            var cb = document.getElementById('nav-toggle-cb');
+            if (!cb) return;
+            document.querySelectorAll('nav a').forEach(function (a) { a.addEventListener('click', function () { cb.checked = false; }); });
+            document.addEventListener('click', function (e) { if (cb.checked && !e.target.closest('header')) cb.checked = false; });
+        })();
     </script>
 </body>
 </html>
