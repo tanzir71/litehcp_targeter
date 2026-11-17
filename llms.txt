@@ -3,13 +3,13 @@
 > Self-hosted, local-first HCP (healthcare professional) targeting and segmentation tool. A single PHP 8 file with SQLite: CSV import with automatic column matching, pre-import checks and imputation, priority/tier/decile and confidence scoring, When/Then rules enrichment (personas, tags, compliance flags), a plain-language audience builder with global suppression, a campaign ROI planner, and privacy-first CSV exports (minimal, CRM target list, email platform). Designed for shared hosting (cPanel/Namecheap); no vendor cloud, no per-seat fees, offline after setup.
 
 Key facts:
-- Version: 1.2.0. Deployment: upload `litehcp.php` to any PHP 8.0+ host (8.3+ recommended); SQLite schema auto-creates and auto-migrates; first registered user becomes admin.
+- Version: 1.2.1. Deployment: upload `litehcp.php` to any PHP 8.0+ host (8.3+ recommended); SQLite schema auto-creates and auto-migrates; first registered user becomes admin.
 - Demo data: Overview → "Load sample data" loads 200 realistic HCP profiles, 9 enrichment rules, and 6 audiences in one click.
 - Suppression: HCPs with the Do Not Contact persona or on the suppression list are excluded inside every count, preview and export query, with no override.
 - Imports: upload → match columns (synonyms such as NPI, First name, Email opt-in) → check data (missing/duplicate IDs, NPI check digit, unreadable dates, unknown consent) → background chunked import.
 - Scoring: priority score from consent, recency and engagement; tiers A/B/C, deciles 1–10, planned calls per tier; every profile explains its score.
 - Roles: viewer, editor, admin.
-- Security: CSRF on all POSTs, nonce-based CSP with no third-party assets, rate limiting, prepared statements, allowlisted audience fields, upload validation, append-only audit log, `php litehcp.php action=selftest` (33 checks).
+- Security: CSRF on all POSTs, nonce-based CSP with no third-party assets, rate limiting, prepared statements, allowlisted audience fields, upload validation, append-only audit log, `php litehcp.php action=selftest` (43 checks).
 - Privacy: default exports contain no email/name; the email platform format needs an admin, the PII setting and per-HCP email consent, and is audited.
 - Scale: chunked imports and a token-protected cron job for batch recompute.
 
@@ -17,7 +17,8 @@ Key facts:
 
 - [Landing page](https://tanzir71.github.io/litehcp_targeter/): overview, features, setup paths, FAQ
 - [What's new in 1.2](https://tanzir71.github.io/litehcp_targeter/#new): changes from 1.1 and upgrade notes
-- [Documentation](https://tanzir71.github.io/litehcp_targeter/docs.html): deploy, configuration, rules JSON reference, segments, exports, security
+- [Documentation](https://tanzir71.github.io/litehcp_targeter/docs.html): deploy, upgrade, configuration, import, scoring, rules reference, audiences, suppression, exports, cron, security
 - [Comparison](https://tanzir71.github.io/litehcp_targeter/compare.html): vs. Veeva CRM, Salesforce Life Sciences Cloud, IQVIA OCE
-- [Live demo](https://tanzir71.github.io/litehcp_targeter/demo.html): in-browser simulation with the full sample dataset
+- [Live demo](https://tanzir71.github.io/litehcp_targeter/demo.html): the 1.2 app running in your browser with the sample dataset (audiences, rules, import wizard, editable HCP grid, exports)
+- [Veeva CRM alternative](https://tanzir71.github.io/litehcp_targeter/veeva-crm-alternative.html), [Salesforce Life Sciences alternative](https://tanzir71.github.io/litehcp_targeter/salesforce-life-sciences-alternative.html), [IQVIA OCE alternative](https://tanzir71.github.io/litehcp_targeter/iqvia-oce-alternative.html): when the targeting slice is all you need
 - [Repository](https://github.com/tanzir71/litehcp_targeter): source code, SETUP.md, SECURITY.md, CHANGELOG.md

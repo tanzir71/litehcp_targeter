@@ -4,172 +4,354 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiteHCP Targeter vs. Enterprise HCP Targeting Platforms — Honest Comparison</title>
-    <meta name="description" content="How LiteHCP Targeter compares to enterprise life-sciences CRM and HCP engagement platforms like Veeva CRM, Salesforce Life Sciences Cloud, and IQVIA OCE — and when each is the right choice.">
+    <meta name="description" content="How LiteHCP Targeter compares to enterprise life-sciences CRM and HCP engagement platforms like Veeva Vault CRM, Salesforce Life Sciences Cloud, and IQVIA OCE — and when each is the right choice for HCP targeting and segmentation.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://tanzir71.github.io/litehcp_targeter/compare.html">
-    <meta property="og:title" content="LiteHCP Targeter vs. Enterprise HCP Platforms">
-    <meta property="og:description" content="An honest comparison: when a single-file, self-hosted targeting tool is enough — and when you need the enterprise suite.">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
+    <meta property="og:title" content="LiteHCP Targeter vs. enterprise HCP platforms">
+    <meta property="og:description" content="An honest comparison for the targeting and segmentation workflow: cost, setup time, data residency, suppression and exports.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tanzir71.github.io/litehcp_targeter/compare.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="theme-color" content="#0E1726">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232540FF'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='%23fff' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23fff'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg:#f4f3ee; --bg-alt:#ebe9e1; --fg:#0a0a0a; --muted:#6b6b66; --muted-2:#8a877e; --faint:#a8a59c;
-            --border:#cfcdc4; --border-soft:#e3e1d8; --panel:#fbfaf6; --acc:#2540ff;
-            --dk-bg:#0c0d0e; --dk-ink:#f4f3ee; --dk-mute:#8e8f88;
-            --f-sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
-            --f-mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
-        }
-        * { box-sizing:border-box; }
-        body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--f-sans); font-size:14.5px; line-height:1.65; }
-        a { color:inherit; text-decoration:none; }
-        .container { margin:0 auto; max-width:1152px; padding:0 20px; }
-        .mono { font-family:var(--f-mono); }
-        header { position:sticky; top:0; z-index:40; border-bottom:1px solid var(--border); background:rgba(244,243,238,0.92); backdrop-filter:blur(10px); }
-        .header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; }
-        .brand { display:inline-flex; align-items:center; gap:12px; }
-        .logo { display:grid; place-items:center; width:34px; height:34px; background:var(--fg); }
-        .logo span { font-family:var(--f-mono); font-size:11px; color:var(--bg); letter-spacing:0.05em; }
-        .brand-name { font-size:14px; font-weight:600; letter-spacing:-0.02em; }
-        nav { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px; font-size:14px; }
-        .nav-link { display:inline-flex; height:36px; align-items:center; padding:0 10px; color:var(--muted); }
-        .nav-link:hover { background:var(--bg-alt); color:var(--fg); }
-        .btn { display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 18px; border:1px solid var(--fg); background:var(--fg); color:var(--bg); font-size:14px; font-weight:550; }
-        .btn:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
-        .eyebrow { display:inline-flex; align-items:center; gap:12px; font-family:var(--f-mono); font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted); }
-        .eyebrow::before { content:""; width:12px; height:12px; background:var(--acc); flex:none; }
-        .hero { padding:64px 0 40px; border-bottom:1px solid var(--border); }
-        h1 { margin:18px 0 0; font-size:36px; font-weight:650; letter-spacing:-0.035em; line-height:1.08; max-width:780px; text-wrap:balance; }
-        @media (min-width:640px) { h1 { font-size:44px; } }
-        .lead { margin-top:16px; color:var(--muted); max-width:680px; font-size:16px; line-height:1.7; }
-        .section { padding:56px 0; border-bottom:1px solid var(--border); }
-        h2 { font-size:26px; font-weight:650; letter-spacing:-0.03em; margin:0 0 8px; }
-        .sub { color:var(--muted); max-width:640px; margin:0 0 24px; }
-        .tbl-wrap { overflow-x:auto; border:1px solid var(--border); background:var(--panel); }
-        table { width:100%; border-collapse:collapse; font-size:13.5px; min-width:760px; }
-        th { font-family:var(--f-mono); font-size:10.5px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted-2); text-align:left; padding:12px 14px; border-bottom:1px solid var(--fg); }
-        th.hl { color:var(--acc); }
-        td { padding:11px 14px; border-bottom:1px solid var(--border-soft); vertical-align:top; }
-        td.hl { background:#fff; }
-        td b { font-weight:650; }
-        .yes { color:var(--acc); font-weight:650; }
-        .meh { color:var(--muted-2); }
-        .grid { display:grid; grid-template-columns:1fr; gap:1px; background:var(--border); border:1px solid var(--border); }
-        @media (min-width:900px) { .grid-2 { grid-template-columns:1fr 1fr; } }
-        .cell { background:var(--panel); padding:22px; }
-        .cell h3 { margin:0 0 8px; font-size:16px; font-weight:650; }
-        .cell p, .cell li { font-size:13.5px; color:var(--muted); line-height:1.65; }
-        .cell ul { margin:8px 0 0; padding-left:20px; }
-        .cell .tag { display:inline-block; margin-bottom:10px; font-family:var(--f-mono); font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; padding:4px 8px; border:1px solid var(--border); color:var(--muted-2); }
-        .cell .tag.acc { background:var(--acc); border-color:var(--acc); color:#fff; }
-        .cta-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
-        .btn-lg { height:44px; }
-        .btn-ghost { background:transparent; color:var(--fg); }
-        .btn-ghost:hover { background:var(--fg); color:var(--bg); }
-        footer { padding:24px 0 40px; font-size:13px; color:var(--muted); }
-        footer a { border-bottom:1px solid var(--border); }
-        footer a:hover { color:var(--fg); border-color:var(--acc); }
-        .disclaimer { font-size:12px; color:var(--muted-2); max-width:760px; margin-top:18px; line-height:1.6; }
-    </style>
+:root{--paper:#FFFFFF;--mist:#F3F5F8;--mist-2:#E9EDF2;--ink:#0E1726;--slate:#465163;--quiet:#768195;--rule:#DCE1E8;--rule-soft:#E9EDF2;
+--acc:#2540FF;--acc-deep:#1A2DC4;--acc-wash:#ECEFFF;--acc-line:#C9D0FF;--stop:#BF3A2F;--stop-wash:#FCF2F1;--stop-line:#F0CFCB;--go:#1D7A52;--go-wash:#E7F4EE;
+--night:#0E1726;--night-2:#16223A;--night-rule:#26324A;--night-ink:#EEF1F6;--night-quiet:#97A2B6;
+--f-sans:"Instrument Sans","Helvetica Neue",Arial,system-ui,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;--wrap:1200px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:inherit;text-decoration:none}
+img,svg{display:block}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:4px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 32px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip:focus{position:fixed;left:16px;top:16px;z-index:100;width:auto;height:auto;margin:0;clip:auto;background:var(--paper);border:1px solid var(--ink);padding:8px 12px;font-size:14px}
+h1{margin:0;font-size:56px;line-height:1.04;font-weight:700;letter-spacing:-.03em;text-wrap:balance}
+h2{margin:0;font-size:38px;line-height:1.1;font-weight:700;letter-spacing:-.03em;text-wrap:balance}
+h3{margin:0;font-size:18px;line-height:1.3;font-weight:600;letter-spacing:-.01em}
+.lead{margin:22px 0 0;max-width:40em;font-size:19px;line-height:1.6;color:var(--slate);text-wrap:pretty}
+.text-link{color:var(--acc);font-weight:600;border-bottom:1px solid var(--acc-line)}
+.text-link:hover{border-bottom-color:var(--acc)}
+/* header */
+.site-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--rule)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:24px;height:68px}
+.brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.01em}
+.mark{width:28px;height:28px;flex:none}
+.nav{display:flex;align-items:center;gap:4px;font-size:15px}
+.nav a.link{padding:8px 12px;border-radius:6px;color:var(--slate)}
+.nav a.link:hover{color:var(--ink);background:var(--mist)}
+.nav a.link[aria-current=page]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--acc);border-radius:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 20px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);font:600 15px/1 var(--f-sans);white-space:nowrap;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.primary:hover{background:var(--acc-deep);border-color:var(--acc-deep)}
+.btn.small{height:38px;padding:0 14px;font-size:14px}
+.btn svg{width:16px;height:16px}
+.nav .btn{margin-left:8px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+/* closing band */
+.closing{background:var(--night);color:var(--night-ink);padding:88px 0}
+.closing-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:64px;align-items:end}
+.closing h2{color:#fff;font-size:42px;max-width:16ch}
+.closing p{margin:20px 0 0;color:var(--night-quiet);font-size:18px;max-width:34em}
+.closing .cta{justify-content:flex-end}
+.closing .btn{background:transparent;color:#fff;border-color:#3A4763}
+.closing .btn:hover{border-color:#fff}
+.closing .btn.primary{background:var(--acc);border-color:var(--acc)}
+.closing .btn.primary:hover{background:#fff;border-color:#fff;color:var(--ink)}
+/* footer */
+.site-footer{padding:56px 0 48px;border-top:1px solid var(--rule)}
+.foot{display:grid;grid-template-columns:minmax(0,4fr) repeat(3,minmax(0,2fr));gap:40px}
+.foot p{margin:14px 0 0;font-size:14.5px;color:var(--slate);max-width:26em}
+.foot h4{margin:4px 0 14px;font-size:14px;font-weight:600}
+.foot ul{list-style:none;margin:0;padding:0;font-size:14.5px}
+.foot li{margin:0 0 10px}
+.foot li a{color:var(--slate)}
+.foot li a:hover{color:var(--acc)}
+.colophon{margin-top:44px;padding-top:20px;border-top:1px solid var(--rule-soft);font-size:13.5px;color:var(--quiet);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+.colophon a{color:var(--slate);border-bottom:1px solid var(--rule)}
+.colophon a:hover{color:var(--acc)}
+.nav-cb{position:absolute;opacity:0;pointer-events:none}
+.nav-toggle{display:none}
+@media (max-width:1080px){
+  h1{font-size:46px}
+  .closing-grid{grid-template-columns:1fr;gap:28px}
+  .closing .cta{justify-content:flex-start}
+  .foot{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .foot > div:first-child{grid-column:1 / -1}
+}
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 20px}
+  .bar{height:60px}
+  h1{font-size:36px}
+  h2{font-size:28px}
+  .lead{font-size:17px}
+  .nav-toggle{display:flex;flex-direction:column;justify-content:center;gap:5px;width:44px;height:40px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);cursor:pointer}
+  .nav-toggle span,.nav-toggle::before,.nav-toggle::after{content:"";display:block;width:18px;height:2px;margin:0 auto;background:var(--ink);border-radius:2px;transition:transform .2s ease,opacity .2s ease}
+  .nav{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;padding:8px 20px 16px;background:var(--paper);border-bottom:1px solid var(--rule);box-shadow:0 16px 32px -16px rgba(14,23,38,.25)}
+  .nav-cb:checked ~ .nav{display:flex}
+  .nav a.link{padding:14px 4px;border-radius:0;border-bottom:1px solid var(--rule-soft);font-size:16px}
+  .nav a.link[aria-current=page]{box-shadow:none;color:var(--acc)}
+  .nav .btn{margin:14px 0 0;height:48px}
+  .nav-cb:checked ~ .nav-toggle span{opacity:0}
+  .nav-cb:checked ~ .nav-toggle::before{transform:translateY(7px) rotate(45deg)}
+  .nav-cb:checked ~ .nav-toggle::after{transform:translateY(-7px) rotate(-45deg)}
+  .closing{padding:64px 0}
+  .closing h2{font-size:30px}
+  .foot{grid-template-columns:1fr 1fr}
+}
+
+.cmp-hero{padding:72px 0 64px;border-bottom:1px solid var(--rule)}
+.cmp-hero .wrap{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:64px;align-items:end}
+.updated{display:inline-block;margin:0 0 24px;font-size:13px;font-weight:500;color:var(--slate);padding:5px 11px;border:1px solid var(--rule);border-radius:999px}
+.cmp-hero h1{max-width:15ch}
+.verdict{border-left:3px solid var(--acc);padding:4px 0 4px 22px}
+.verdict p{margin:0;font-size:17px;color:var(--slate)}
+.verdict p + p{margin-top:12px}
+.verdict b{color:var(--ink);font-weight:600}
+section{scroll-margin-top:80px}
+.sec{padding:88px 0}
+.sec.tint{background:var(--mist);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.sec-head{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:64px;align-items:end;margin-bottom:40px}
+.sec-head p{margin:0;font-size:17px;color:var(--slate);max-width:36em}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--ink)}
+.cmp{width:100%;min-width:960px;border-collapse:separate;border-spacing:0;font-size:15px}
+.cmp thead th{position:sticky;top:0;background:var(--paper);text-align:left;vertical-align:bottom;padding:18px 18px 14px;font-size:15px;font-weight:600;border-bottom:1px solid var(--rule);line-height:1.3}
+.cmp thead th:first-child{width:21%;padding-left:0;color:var(--quiet);font-weight:500;font-size:13.5px}
+.cmp thead th.us{background:var(--acc-wash);color:var(--acc-deep);box-shadow:inset 0 3px 0 var(--acc);border-radius:10px 10px 0 0}
+.cmp tbody th{text-align:left;font-weight:500;color:var(--ink);padding:14px 18px 14px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.cmp td{padding:14px 18px;border-bottom:1px solid var(--rule-soft);color:var(--slate);vertical-align:top;width:19.75%}
+.cmp td.us{background:var(--acc-wash);color:var(--ink)}
+.cmp tr:last-child td.us{border-radius:0 0 10px 10px}
+.cmp tr.grp th{padding:26px 0 10px;font-size:13.5px;font-weight:600;color:var(--quiet);border-bottom:1px solid var(--rule)}
+.cmp tr.grp + tr th,.cmp tr.grp + tr td{padding-top:16px}
+.cv{display:flex;gap:8px;align-items:flex-start;line-height:1.45}
+.ic{width:16px;height:16px;flex:none;margin-top:2px}
+.ic.yes{color:var(--go)}
+.ic.no{color:#A9B1BE}
+.swipe{display:none;margin:0 0 12px;font-size:14px;color:var(--quiet)}
+.fine{margin:20px 0 0;font-size:13.5px;color:var(--quiet);max-width:62em}
+.fine a{color:var(--slate);border-bottom:1px solid var(--rule)}
+.market{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--ink)}
+.market > div{padding:26px 28px 0 0}
+.market > div + div{padding-left:28px;border-left:1px solid var(--rule)}
+.market p{margin:10px 0 0;font-size:15.5px;color:var(--slate)}
+.srcs{display:flex;flex-wrap:wrap;gap:0 16px}
+.market .src{display:inline-block;margin-top:14px;font-size:13.5px;color:var(--acc);font-weight:600;border-bottom:1px solid var(--acc-line)}
+.fit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.fit-col{padding:32px;border:1px solid var(--rule);border-radius:12px;background:var(--paper)}
+.fit-col.us{border-color:var(--acc);box-shadow:inset 0 3px 0 var(--acc)}
+.fit-col h3{font-size:22px}
+.fit-col .sub{margin:6px 0 0;color:var(--slate);font-size:16px}
+.fit-col ul{margin:18px 0 0;padding:0;list-style:none}
+.fit-col li{display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--rule-soft);font-size:15.5px;color:var(--slate)}
+.fit-col li svg{flex:none;width:18px;height:18px;margin-top:3px;color:var(--quiet)}
+.fit-col.us li svg{color:var(--acc)}
+@media (max-width:1080px){
+  .cmp-hero .wrap,.sec-head{grid-template-columns:1fr;gap:28px}
+  .market{grid-template-columns:1fr}
+  .market > div,.market > div + div{padding:22px 0;border-left:0;border-bottom:1px solid var(--rule)}
+}
+@media (max-width:760px){
+  .cmp-hero{padding:44px 0 48px}
+  .sec{padding:64px 0}
+  .fit{grid-template-columns:1fr}
+  .swipe{display:block}
+  .fit-col{padding:24px}
+  .cmp thead th:first-child,.cmp tbody th{position:sticky;left:0;background:var(--paper);z-index:1;min-width:150px;box-shadow:1px 0 0 var(--rule-soft)}
+  .cmp tr.grp th{position:static;box-shadow:none}
+}
+</style>
 </head>
 <body>
-    <header>
-        <div class="container header-inner">
-            <a class="brand" href="./index.html">
-                <div class="logo"><span>HT</span></div>
-                <span class="brand-name">LiteHCP Targeter</span>
+<a href="#content" class="sr-only skip">Skip to content</a>
+<header class="site-header">
+    <div class="wrap bar">
+        <a class="brand" href="./" aria-label="LiteHCP Targeter home">
+            <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2540FF"/><circle cx="16" cy="16" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="16" cy="16" r="2.6" fill="#fff"/></svg>
+            LiteHCP Targeter
+        </a>
+        <input type="checkbox" id="nav-cb" class="nav-cb" aria-hidden="true" tabindex="-1">
+        <label for="nav-cb" class="nav-toggle" role="button" aria-label="Toggle navigation menu"><span></span></label>
+        <nav class="nav" aria-label="Primary">
+            <a class="link" href="./#new">What's new</a>
+            <a class="link" href="./#features">Features</a>
+            <a class="link" href="./docs.html">Docs</a>
+            <a class="link" href="./compare.html" aria-current="page">Compare</a>
+            <a class="link" href="./demo.html">Demo</a>
+            <a class="btn small" href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">
+                <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+                GitHub
             </a>
-            <nav>
-                <a class="nav-link" href="./index.html">Home</a>
-                <a class="nav-link" href="./docs.html">Docs</a>
-                <a class="nav-link" href="./demo.html">Demo</a>
-                <a class="btn" href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a>
-            </nav>
+        </nav>
+    </div>
+</header>
+<main id="content">
+    <section class="cmp-hero" aria-labelledby="cmp-title">
+        <div class="wrap">
+            <div>
+                <span class="updated">Honest comparison, updated November 2026</span>
+                <h1 id="cmp-title">You probably don't need an enterprise suite to build a target list.</h1>
+            </div>
+            <div class="verdict">
+                <p>Platforms like Veeva Vault CRM, Salesforce Life Sciences Cloud and IQVIA OCE are excellent at what they do: running the entire commercial operation of a life-sciences company.</p>
+                <p>LiteHCP Targeter does one slice of that job: <b>turning HCP CSVs into scored, compliant, exportable target lists.</b> If that slice is all you need, the difference in cost and complexity is enormous.</p>
+            </div>
         </div>
-    </header>
-    <main>
-        <section class="hero">
-            <div class="container">
-                <span class="eyebrow">Honest comparison</span>
-                <h1>You probably don't need an enterprise suite to build a target list.</h1>
-                <p class="lead">Platforms like Veeva CRM, Salesforce Life Sciences Cloud, and IQVIA OCE are excellent at what they do — running the entire commercial operation of a life-sciences company. LiteHCP Targeter does one slice of that job: turning HCP CSVs into scored, compliant, exportable segments. If that slice is all you need, the difference in cost and complexity is enormous.</p>
-            </div>
-        </section>
+    </section>
 
-        <section class="section">
-            <div class="container">
-                <h2>Side by side</h2>
-                <p class="sub">Indicative comparison for the <b>targeting & segmentation workflow specifically</b> — not the platforms' full feature sets.</p>
-                <div class="tbl-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th class="hl">LiteHCP Targeter</th>
-                                <th>Veeva CRM / OpenData</th>
-                                <th>Salesforce Life Sciences Cloud</th>
-                                <th>IQVIA OCE / OneKey</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><b>Scope</b></td><td class="hl">CSV → segments → export</td><td class="meh">Full commercial CRM + HCP data</td><td class="meh">Full CRM platform for life sciences</td><td class="meh">Omnichannel engagement + HCP data</td></tr>
-                            <tr><td><b>Pricing model</b></td><td class="hl"><span class="yes">$0 — self-hosted</span></td><td class="meh">Enterprise contract, per-seat</td><td class="meh">Enterprise contract, per-seat</td><td class="meh">Enterprise contract</td></tr>
-                            <tr><td><b>Time to first segment</b></td><td class="hl"><span class="yes">Minutes</span></td><td class="meh">Weeks–months (implementation)</td><td class="meh">Weeks–months (implementation)</td><td class="meh">Weeks–months (implementation)</td></tr>
-                            <tr><td><b>Where data lives</b></td><td class="hl"><span class="yes">Your server (SQLite)</span></td><td class="meh">Vendor cloud</td><td class="meh">Vendor cloud</td><td class="meh">Vendor cloud</td></tr>
-                            <tr><td><b>Infrastructure needed</b></td><td class="hl">Any PHP 8 host</td><td class="meh">SaaS subscription + admin team</td><td class="meh">SaaS subscription + admin team</td><td class="meh">SaaS subscription + admin team</td></tr>
-                            <tr><td><b>Rules-based enrichment</b></td><td class="hl"><span class="yes">Yes — JSON rules, testable</span></td><td>Yes (platform tooling)</td><td>Yes (platform tooling)</td><td>Yes (platform tooling)</td></tr>
-                            <tr><td><b>Privacy-first exports</b></td><td class="hl"><span class="yes">Default — PII gated + audited</span></td><td>Configurable, admin-dependent</td><td>Configurable, admin-dependent</td><td>Configurable, admin-dependent</td></tr>
-                            <tr><td><b>Verified HCP reference data</b></td><td class="meh">No — bring your own lists</td><td><span class="yes">Yes (OpenData)</span></td><td class="meh">Via partners</td><td><span class="yes">Yes (OneKey)</span></td></tr>
-                            <tr><td><b>Field-team / rep workflows</b></td><td class="meh">No</td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td></tr>
-                            <tr><td><b>Email/omnichannel execution</b></td><td class="meh">No — exports feed your tools</td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td></tr>
-                            <tr><td><b>Source auditable</b></td><td class="hl"><span class="yes">Yes — one readable PHP file</span></td><td class="meh">No</td><td class="meh">No</td><td class="meh">No</td></tr>
-                            <tr><td><b>Works offline / air-gapped</b></td><td class="hl"><span class="yes">Yes, after setup</span></td><td class="meh">No</td><td class="meh">No</td><td class="meh">No</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <p class="disclaimer">Vendor capabilities summarized at a high level from publicly available product descriptions and are indicative, not exhaustive; enterprise platforms vary by edition, configuration, and contract. Veeva, Salesforce, and IQVIA are trademarks of their respective owners; LiteHCP Targeter is not affiliated with or endorsed by any of them.</p>
+    <section class="sec" id="side-by-side" aria-labelledby="sbs-title">
+        <div class="wrap">
+            <div class="sec-head">
+                <h2 id="sbs-title">Side by side</h2>
+                <p>An indicative comparison for the <b>targeting and segmentation workflow</b> specifically, not the platforms' full feature sets.</p>
             </div>
-        </section>
-
-        <section class="section">
-            <div class="container">
-                <h2>Which one is right for you?</h2>
-                <div class="grid grid-2" style="margin-top:24px">
-                    <div class="cell">
-                        <span class="tag acc">Choose LiteHCP Targeter</span>
-                        <h3>You need clean segments, not a platform</h3>
-                        <ul>
-                            <li>Your HCP data arrives as CSVs from conferences, partners, data vendors, or your own systems.</li>
-                            <li>You're a small team, agency, or regional affiliate without enterprise CRM budget or admins.</li>
-                            <li>Data residency matters — you want HCP data on infrastructure you control.</li>
-                            <li>You want export discipline: minimal fields by default, PII gated and audited.</li>
-                            <li>You need it working this week, on hosting you already pay for.</li>
-                        </ul>
-                    </div>
-                    <div class="cell">
-                        <span class="tag">Choose an enterprise platform</span>
-                        <h3>You're running the whole commercial engine</h3>
-                        <ul>
-                            <li>You need verified HCP reference data (Veeva OpenData, IQVIA OneKey) kept current at scale.</li>
-                            <li>Field reps need call planning, sampling, and territory management.</li>
-                            <li>You execute email and omnichannel campaigns inside the same system.</li>
-                            <li>You have compliance requirements that mandate a specific validated vendor stack.</li>
-                            <li>You have the budget, admins, and implementation timeline to match.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="cta-row">
-                    <a class="btn btn-lg" href="./demo.html">Try the LiteHCP demo</a>
-                    <a class="btn btn-lg btn-ghost" style="background:transparent;color:var(--fg)" href="./docs.html">Read the docs</a>
-                </div>
+            <p class="swipe">Scroll sideways to compare all four.</p>
+            <div class="tbl-scroll">
+                <table class="cmp">
+                    <thead><tr><th scope="col">Capability</th><th scope="col" class="us">LiteHCP Targeter</th><th scope="col">Veeva Vault CRM / OpenData</th><th scope="col">Salesforce Life Sciences Cloud</th><th scope="col">IQVIA OCE / OneKey</th></tr></thead>
+                    <tbody>
+                        <tr class="grp"><th scope="rowgroup" colspan="5">Scope and cost</th></tr>
+                        <tr><th scope="row">Scope</th><td class="us"><span class="cv"><span>Lists → scored audiences → exports</span></span></td><td><span class="cv"><span>Full commercial CRM + HCP data</span></span></td><td><span class="cv"><span>Full CRM platform for life sciences</span></span></td><td><span class="cv"><span>Omnichannel engagement + HCP data</span></span></td></tr>
+                        <tr><th scope="row">Pricing model</th><td class="us"><span class="cv"><span>$0, self-hosted</span></span></td><td><span class="cv"><span>Enterprise contract, per-seat</span></span></td><td><span class="cv"><span>Enterprise contract, per-seat</span></span></td><td><span class="cv"><span>Enterprise contract</span></span></td></tr>
+                        <tr><th scope="row">Time to first audience</th><td class="us"><span class="cv"><span>Minutes</span></span></td><td><span class="cv"><span>Weeks–months (implementation)</span></span></td><td><span class="cv"><span>Weeks–months (implementation)</span></span></td><td><span class="cv"><span>Weeks–months (implementation)</span></span></td></tr>
+                        <tr><th scope="row">Infrastructure needed</th><td class="us"><span class="cv"><span>Any PHP 8 host</span></span></td><td><span class="cv"><span>SaaS subscription + admin team</span></span></td><td><span class="cv"><span>SaaS subscription + admin team</span></span></td><td><span class="cv"><span>SaaS subscription + admin team</span></span></td></tr>
+                        <tr><th scope="row">Where data lives</th><td class="us"><span class="cv"><span>Your server (SQLite)</span></span></td><td><span class="cv"><span>Vendor cloud</span></span></td><td><span class="cv"><span>Vendor cloud</span></span></td><td><span class="cv"><span>Vendor cloud</span></span></td></tr>
+                        <tr class="grp"><th scope="rowgroup" colspan="5">Targeting workflow</th></tr>
+                        <tr><th scope="row">Rules-based enrichment</th><td class="us"><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes — When/Then rules, tested before saving</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (platform tooling)</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (platform tooling)</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (platform tooling)</span></span></td></tr>
+                        <tr><th scope="row">Do-not-contact suppression</th><td class="us"><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes — applied to every count and export, no override</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (platform tooling)</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (platform tooling)</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (platform tooling)</span></span></td></tr>
+                        <tr><th scope="row">Target lists for field planning</th><td class="us"><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes — tiers, deciles and planned calls, exported for your CRM</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (built-in call planning)</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (built-in call planning)</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (built-in call planning)</span></span></td></tr>
+                        <tr><th scope="row">Privacy-first exports</th><td class="us"><span class="cv"><span>Default — PII gated + audited</span></span></td><td><span class="cv"><span>Configurable, admin-dependent</span></span></td><td><span class="cv"><span>Configurable, admin-dependent</span></span></td><td><span class="cv"><span>Configurable, admin-dependent</span></span></td></tr>
+                        <tr class="grp"><th scope="rowgroup" colspan="5">Data and execution</th></tr>
+                        <tr><th scope="row">Verified HCP reference data</th><td class="us"><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No — bring your own lists (NPIs are checked on import)</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (OpenData)</span></span></td><td><span class="cv"><span>Via partners</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes (OneKey)</span></span></td></tr>
+                        <tr><th scope="row">Field-team / rep workflows</th><td class="us"><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes</span></span></td></tr>
+                        <tr><th scope="row">Email/omnichannel execution</th><td class="us"><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No — exports feed your tools</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes</span></span></td><td><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes</span></span></td></tr>
+                        <tr class="grp"><th scope="rowgroup" colspan="5">Trust and control</th></tr>
+                        <tr><th scope="row">Source auditable</th><td class="us"><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes — one readable PHP file</span></span></td><td><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No</span></span></td><td><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No</span></span></td><td><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No</span></span></td></tr>
+                        <tr><th scope="row">Works offline / air-gapped</th><td class="us"><span class="cv"><svg class="ic yes" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yes, after setup</span></span></td><td><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No</span></span></td><td><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No</span></span></td><td><span class="cv"><svg class="ic no" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>No</span></span></td></tr>
+                    </tbody>
+                </table>
             </div>
-        </section>
-    </main>
-    <footer>
-        <div class="container" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
-            <div>LiteHCP Targeter — built by <a href="https://tanziro.com" target="_blank" rel="noopener">Tanzir</a></div>
-            <div><a href="./index.html">Home</a> · <a href="./docs.html">Docs</a> · <a href="./demo.html">Demo</a> · <a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></div>
+            <p class="fine">Vendor capabilities are summarized at a high level from publicly available product descriptions and are indicative, not exhaustive; enterprise platforms vary by edition, configuration, and contract. Veeva, Salesforce, and IQVIA are trademarks of their respective owners; LiteHCP Targeter is not affiliated with or endorsed by any of them.</p>
         </div>
-    </footer>
+    </section>
+
+    <section class="sec tint" id="market" aria-labelledby="mkt-title">
+        <div class="wrap">
+            <div class="sec-head">
+                <h2 id="mkt-title">The CRM market is moving</h2>
+                <p>Many life-sciences teams are in the middle of a CRM migration. Keeping the targeting step outside the CRM means your lists survive whichever platform you land on.</p>
+            </div>
+            <div class="market">
+                <div>
+                    <h3>Veeva</h3>
+                    <p>Vault CRM, on Veeva's own platform, replaces the Salesforce-based Veeva CRM. Support for the Salesforce-based version now ends at the end of December 2029.</p>
+                    <a class="src" href="https://intuitionlabs.ai/articles/veeva-api" target="_blank" rel="noopener">Source: IntuitionLabs</a>
+                </div>
+                <div>
+                    <h3>Salesforce and IQVIA</h3>
+                    <p>In 2024 IQVIA agreed to license its OCE CRM software to Salesforce and collaborate on Life Sciences Cloud for Customer Engagement, which Salesforce has since launched. IQVIA continues to support existing OCE customers.</p>
+                    <span class="srcs"><a class="src" href="https://www.salesforce.com/news/stories/life-sciences-cloud-for-customer-engagement-availability/" target="_blank" rel="noopener">Source: Salesforce</a> <a class="src" href="https://intuitionlabs.ai/articles/iqvia-healthcare-data-analytics-solutions" target="_blank" rel="noopener">IntuitionLabs on IQVIA</a></span>
+                </div>
+                <div>
+                    <h3>What it means for targeting</h3>
+                    <p>LiteHCP's CRM target list (HCP ID, NPI, tier, planned calls per cycle) is a plain CSV, so the same audiences load into Vault CRM, Life Sciences Cloud or OCE without rebuilding them.</p>
+                    <a class="src" href="./docs.html#export">How exports work</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sec" id="fit" aria-labelledby="fit-title">
+        <div class="wrap">
+            <div class="sec-head">
+                <h2 id="fit-title">Which one is right for you?</h2>
+                <p>Most teams that build target lists from CSVs don't need a platform to do it. Some do.</p>
+            </div>
+            <div class="fit">
+                <div class="fit-col us">
+                    <h3>Choose LiteHCP Targeter</h3>
+                    <p class="sub">You need clean target lists, not a platform.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>Your HCP data arrives as CSVs from conferences, partners, data vendors, or your own systems.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>You're a small team, agency, or regional affiliate without enterprise CRM budget or admins.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>Data residency matters: you want HCP data on infrastructure you control.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>You want export discipline: suppression always applied, minimal fields by default, PII gated and audited.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>You need it working this week, on hosting you already pay for.</li>
+                    </ul>
+                </div>
+                <div class="fit-col">
+                    <h3>Choose an enterprise platform</h3>
+                    <p class="sub">You're running the whole commercial engine.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>You need verified HCP reference data (Veeva OpenData, IQVIA OneKey) kept current at scale.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>Field reps need call planning, sampling, and territory management.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>You execute email and omnichannel campaigns inside the same system.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>You have compliance requirements that mandate a specific validated vendor stack.</li>
+                        <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>You have the budget, admins, and implementation timeline to match.</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="fine">More detail on each: the <a href="./veeva-crm-alternative.html">Veeva CRM alternative</a>, <a href="./salesforce-life-sciences-alternative.html">Salesforce Life Sciences alternative</a> and <a href="./iqvia-oce-alternative.html">IQVIA OCE alternative</a> pages.</p>
+        </div>
+    </section>
+
+    <section class="closing" aria-labelledby="end-title">
+        <div class="wrap closing-grid">
+            <div>
+                <h2 id="end-title">See it on the sample data first.</h2>
+                <p>The demo runs the 1.2 app in your browser with 200 sample HCPs. Build an audience, watch suppression remove Do Not Contact HCPs, export a CRM target list.</p>
+            </div>
+            <div class="cta">
+                <a class="btn primary" href="./demo.html">Try the LiteHCP demo</a>
+                <a class="btn" href="./docs.html">Read the docs</a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="wrap">
+        <div class="foot">
+            <div>
+                <a class="brand" href="./"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2540FF"/><circle cx="16" cy="16" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="16" cy="16" r="2.6" fill="#fff"/></svg>LiteHCP Targeter</a>
+                <p>Self-hosted HCP targeting and segmentation. One PHP file, SQLite, your server.</p>
+            </div>
+            <div>
+                <h4>Product</h4>
+                <ul><li><a href="./demo.html">Live demo</a></li><li><a href="./docs.html">Documentation</a></li><li><a href="./compare.html">Comparison</a></li></ul>
+            </div>
+            <div>
+                <h4>Alternatives</h4>
+                <ul><li><a href="./veeva-crm-alternative.html">Veeva CRM</a></li><li><a href="./salesforce-life-sciences-alternative.html">Salesforce Life Sciences</a></li><li><a href="./iqvia-oce-alternative.html">IQVIA OCE</a></li></ul>
+            </div>
+            <div>
+                <h4>Project</h4>
+                <ul><li><a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></li><li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SETUP.md" target="_blank" rel="noopener">SETUP.md</a></li><li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md</a></li></ul>
+            </div>
+        </div>
+        <div class="colophon">
+            <span>LiteHCP Targeter — self-hosted HCP targeting, built by <a href="https://tanziro.com" target="_blank" rel="noopener">Tanzir</a></span>
+            <span>Not affiliated with Veeva, Salesforce or IQVIA.</span>
+        </div>
+    </div>
+</footer>
+<script>
+(function () {
+    document.documentElement.classList.add('js');
+    var cb = document.getElementById('nav-cb');
+    if (!cb) return;
+    document.querySelectorAll('.nav a').forEach(function (a) { a.addEventListener('click', function () { cb.checked = false; }); });
+    document.addEventListener('click', function (e) { if (cb.checked && !e.target.closest('.site-header')) cb.checked = false; });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cb.checked = false; });
+})();
+</script>
+
 </body>
 </html>

@@ -4,7 +4,7 @@
 
 Import HCP lists from any CSV, fill and flag missing data, enrich with rules, build consent-safe audiences in plain language, plan campaign ROI, and export lists ready for your CRM or email platform — on your server, with SQLite. No vendor cloud, no per-seat fees, offline after setup. Optimized for shared hosting (cPanel / Namecheap).
 
-Current version: **1.2.0** — see [What's new in 1.2](#whats-new-in-12) and [CHANGELOG.md](CHANGELOG.md).
+Current version: **1.2.1** — see [What's new in 1.2](#whats-new-in-12) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Links
 
@@ -78,8 +78,8 @@ litehcp.php       # the entire application
 index.html        # landing page (GitHub Pages), incl. What's new in 1.2
 docs.html         # documentation
 compare.html      # comparison vs. enterprise HCP platforms
-demo.html         # client-side interactive demo
-*.html            # SEO alternative pages
+demo.html         # the 1.2 app running in the browser on sample data (no server)
+*-alternative.html  # Veeva, Salesforce and IQVIA alternative guides
 sitemap.xml, robots.txt, llms.txt
 SETUP.md, SECURITY.md, CHANGELOG.md
 ```

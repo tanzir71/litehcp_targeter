@@ -27,7 +27,7 @@
       "applicationCategory": "BusinessApplication",
       "description": "Self-hosted, local-first HCP targeting and segmentation tool. CSV import with flexible mapping and imputation, rules enrichment, priority tiers and confidence scoring, a plain-language audience builder with global suppression, campaign ROI planning, and privacy-first CSV exports — all in a single PHP file with SQLite.",
       "url": "https://tanzir71.github.io/litehcp_targeter/",
-      "softwareVersion": "1.2.0",
+      "softwareVersion": "1.2.1",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "author": { "@type": "Person", "name": "Tanzir", "url": "https://tanziro.com" }
     }
@@ -475,7 +475,7 @@
                 </div>
 <pre class="code" aria-label="Self-test output"><span class="c"># runs against a throwaway database; your data is untouched</span>
 $ php litehcp.php action=selftest
-LiteHCP Targeter 1.2.0 self-test on PHP 8.3
+LiteHCP Targeter 1.2.1 self-test on PHP 8.3
   <span class="ok">ok</span>    sample: 200 HCPs imported
   <span class="ok">ok</span>    23 HCPs get the Do Not Contact persona
   <span class="ok">ok</span>    KOL audience: 53 ready, 7 excluded
@@ -485,7 +485,7 @@ LiteHCP Targeter 1.2.0 self-test on PHP 8.3
   <span class="ok">ok</span>    roles: viewers view only, editors build
         and export, admins manage
   <span class="c">…</span>
-All 33 checks passed.</pre>
+All 43 checks passed.</pre>
             </div>
         </div>
     </section>
@@ -747,12 +747,14 @@ $ php -S localhost:8000
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    {"@type":"Question","name":"Does any data leave my server?","acceptedAnswer":{"@type":"Answer","text":"No. The app is a single PHP file using a local SQLite database. There are no analytics, no phone-home, and no external APIs in the data path."}},
-    {"@type":"Question","name":"What do I need to run LiteHCP Targeter?","acceptedAnswer":{"@type":"Answer","text":"PHP 8.0+ with PDO and SQLite enabled, plus write permission in the app folder. No MySQL, no Composer, no Node."}},
-    {"@type":"Question","name":"Can it handle large HCP lists?","acceptedAnswer":{"@type":"Answer","text":"Imports run in chunks with an auto-reload mode, and a cron endpoint recomputes scores and rules in batches. SQLite comfortably handles hundreds of thousands of profiles for this workload."}},
-    {"@type":"Question","name":"How do the targeting rules work?","acceptedAnswer":{"@type":"Answer","text":"Rules are JSON: a condition tree (AND/OR, operators like =, >=, in, contains, regex) plus actions (set persona, add tags, set compliance flag, adjust priority score). Rules evaluate in priority order, and each profile keeps a trace of which rules fired."}},
-    {"@type":"Question","name":"Is the scoring configurable?","acceptedAnswer":{"@type":"Answer","text":"Yes. Priority weights, the recency window, confidence penalties, imputation defaults, export field allowlists, and rate limits are in a config block at the top of the file, with common settings overridable via .env."}},
-    {"@type":"Question","name":"What does it cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing to deploy — it runs on infrastructure you already have. No per-seat licenses, usage fees, or contracts."}}
+    {"@type":"Question","name":"Does any data leave my server?","acceptedAnswer":{"@type":"Answer","text":"No. The app is a single PHP file using a local SQLite database. There are no analytics, no phone-home, and no external APIs in the data path. Since 1.2 the app also loads no third-party fonts or scripts, so it works fully offline."}},
+    {"@type":"Question","name":"What do I need to run it?","acceptedAnswer":{"@type":"Answer","text":"PHP 8.0+ (8.3 or newer recommended) with PDO and SQLite enabled, standard on virtually all shared hosting, plus write permission in the app folder. That's the entire requirements list — no MySQL, no Composer, no Node."}},
+    {"@type":"Question","name":"Can it handle large HCP lists?","acceptedAnswer":{"@type":"Answer","text":"Imports run in short background chunks with a progress bar, so shared-hosting time limits aren't a problem, and a cron job recomputes scores, rules and tiers in batches for large datasets. SQLite comfortably handles hundreds of thousands of profiles for this workload."}},
+    {"@type":"Question","name":"How do the targeting rules work?","acceptedAnswer":{"@type":"Answer","text":"Each rule is \"when these conditions are true, then update the HCP\". Build it from dropdowns or write it as JSON: conditions joined by all or any, with operators like =, >=, in, contains and regex, and actions that set a persona, add tags, set a compliance flag or adjust the priority score. Rules run in the order you set, each profile keeps a trace of which rules fired, and audiences can target by that trace."}},
+    {"@type":"Question","name":"Is the scoring configurable?","acceptedAnswer":{"@type":"Answer","text":"Yes. Tier cut-offs and planned calls per tier are in Settings. Priority weights (consent / recency / engagement), the recency window, confidence penalties, imputation defaults, export formats and rate limits are in a clearly-marked config block at the top of the file, with a few common settings overridable via .env."}},
+    {"@type":"Question","name":"How does suppression work?","acceptedAnswer":{"@type":"Answer","text":"An HCP is excluded if it is on the suppression list or an enrichment rule gives it the Do Not Contact persona. The exclusion is part of every count, preview and export query, so it can't be switched off for one audience or one user. You can paste in IDs that aren't imported yet; those HCPs are excluded the moment they arrive."}},
+    {"@type":"Question","name":"I'm on 1.1. How do I upgrade?","acceptedAnswer":{"@type":"Answer","text":"Back up litehcp.db, replace litehcp.php, and open it. The database migrates itself, existing HCPs get tiers and deciles, and filter-based audiences keep working. Then run php litehcp.php action=selftest. See upgrading from 1.1 for the one behavior change."}},
+    {"@type":"Question","name":"What does it cost?","acceptedAnswer":{"@type":"Answer","text":"Nothing to deploy — it runs on infrastructure you already have. There are no per-seat licenses, no usage fees, and no contracts. The source is on GitHub."}}
   ]
 }
 </script>
