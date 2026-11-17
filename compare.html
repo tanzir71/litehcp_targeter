@@ -167,6 +167,22 @@ section{scroll-margin-top:80px}
   .cmp thead th:first-child,.cmp tbody th{position:sticky;left:0;background:var(--paper);z-index:1;min-width:150px;box-shadow:1px 0 0 var(--rule-soft)}
   .cmp tr.grp th{position:static;box-shadow:none}
 }
+
+/* support strip */
+.support{display:flex;align-items:center;gap:18px;margin-top:44px;padding:18px 20px 18px 18px;border:1px solid var(--rule);border-radius:12px;background:var(--mist);transition:border-color .15s ease,background .15s ease}
+.support:hover{border-color:var(--ink);background:#fff}
+.support .cup{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#FFDD00;color:#0E1726}
+.support .cup svg{width:22px;height:22px}
+.support .txt{flex:1;min-width:0;font-size:15px;line-height:1.5;color:var(--slate)}
+.support .txt b{display:block;color:var(--ink);font-weight:600}
+.support .go{flex:none;display:inline-flex;align-items:center;height:40px;padding:0 16px;border-radius:8px;background:var(--ink);color:#fff;font:600 14px/1 var(--f-sans);white-space:nowrap}
+.support:hover .go{background:var(--acc)}
+.support + .colophon{margin-top:28px}
+@media (max-width:760px){
+  .support{flex-wrap:wrap;align-items:flex-start;gap:14px;padding:18px}
+  .support .txt{flex-basis:calc(100% - 62px)}
+  .support .go{width:100%;justify-content:center}
+}
 </style>
 </head>
 <body>
@@ -336,6 +352,11 @@ section{scroll-margin-top:80px}
                 <ul><li><a href="https://github.com/tanzir71/litehcp_targeter" target="_blank" rel="noopener">GitHub</a></li><li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SETUP.md" target="_blank" rel="noopener">SETUP.md</a></li><li><a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md</a></li></ul>
             </div>
         </div>
+        <a class="support" href="https://buymeacoffee.com/tanzir" target="_blank" rel="noopener">
+            <span class="cup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5V9z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8.5 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span>
+            <span class="txt"><b>LiteHCP Targeter is free and open source.</b>Tanzir Rahman is Fueling open-source code, local utilities, and late-night builds.</span>
+            <span class="go">Buy me a coffee</span>
+        </a>
         <div class="colophon">
             <span>LiteHCP Targeter — self-hosted HCP targeting, built by <a href="https://tanziro.com" target="_blank" rel="noopener">Tanzir</a></span>
             <span>Not affiliated with Veeva, Salesforce or IQVIA.</span>

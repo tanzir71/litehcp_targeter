@@ -233,6 +233,15 @@ pre.json{white-space:pre-wrap;margin:0;font-family:var(--f-mono);font-size:12.5p
 .tbl th.r{text-align:right}
 .dl{margin:0}
 .xgrid td.ro{white-space:nowrap}
+.demo-foot{padding:0 32px 32px}
+.demo-foot a{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);font-size:13.5px;color:var(--slate);transition:border-color .15s ease}
+.demo-foot a:hover{border-color:var(--ink)}
+.demo-foot .cup{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#FFDD00;color:var(--ink)}
+.demo-foot .cup svg{width:18px;height:18px}
+.demo-foot .txt{flex:1;min-width:0;line-height:1.45}
+.demo-foot .txt b{color:var(--ink);font-weight:600}
+.demo-foot .go{flex:none;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:7px;background:var(--ink);color:#fff;font-weight:600;font-size:13px;white-space:nowrap}
+.demo-foot a:hover .go{background:var(--acc)}
 .noscript{max-width:560px;margin:80px auto;padding:24px;background:#fff;border:1px solid var(--rule);border-radius:12px;font-size:15px}
 @media (max-width:1100px){.demobar .note{display:none}.split{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:860px){
@@ -243,6 +252,10 @@ pre.json{white-space:pre-wrap;margin:0;font-family:var(--f-mono);font-size:12.5p
   .topbar{top:var(--bar)}
   .side{top:0;height:100vh;z-index:80}
   .ov-health,.imp-grid{grid-template-columns:1fr}
+  .demo-foot{padding:0 16px 24px}
+  .demo-foot a{flex-wrap:wrap}
+  .demo-foot .txt{flex-basis:calc(100% - 48px)}
+  .demo-foot .go{width:100%;justify-content:center}
 }
 @media (max-width:520px){.demobar .home span{display:none}.demobar .links .gh{display:none}.demobar .dbtn{padding:0 10px}}
 </style>
@@ -264,6 +277,7 @@ pre.json{white-space:pre-wrap;margin:0;font-family:var(--f-mono);font-size:12.5p
 <aside class="side" id="side" aria-label="Main navigation"><a class="brand" href="#/overview"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2540FF"></rect><circle cx="16" cy="16" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"></circle><circle cx="16" cy="16" r="2.6" fill="#fff"></circle></svg>LiteHCP Targeter</a><a class="nav-a" data-k="overview" href="#/overview"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8.5 8 3l5.5 5.5"></path><path d="M4 7.5V13h8V7.5"></path></svg>Overview</a><div class="nav-grp">Build</div><a class="nav-a" data-k="audiences" href="#/audiences"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><path d="M1.8 13c.5-2.2 2.2-3.5 4.2-3.5s3.7 1.3 4.2 3.5"></path><path d="M10.5 3.6a2.4 2.4 0 0 1 0 4.8M12.2 9.8c1 .6 1.7 1.7 2 3.2"></path></svg>Audiences<span class="ct">6</span></a><a class="nav-a" data-k="hcps" href="#/hcps"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"></rect><path d="M5 6h6M5 8.5h6M5 11h3.5"></path></svg>HCPs<span class="ct">200</span></a><a class="nav-a" data-k="rules" href="#/rules"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h10M3 8h6M3 12h8"></path><circle cx="12" cy="8" r="1.4"></circle></svg>Enrichment rules<span class="ct">9</span></a><div class="nav-grp">Data</div><a class="nav-a" data-k="imports" href="#/imports"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M5 7.5l3 3 3-3"></path><path d="M2.5 11v2.5h11V11"></path></svg>Imports</a><a class="nav-a" data-k="exports" href="#/exports"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M5 5.5l3-3 3 3"></path><path d="M2.5 11v2.5h11V11"></path></svg>Exports</a><div class="nav-grp">Admin</div><a class="nav-a" data-k="suppression" href="#/suppression"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"></circle><path d="M4.2 11.8l7.6-7.6"></path></svg>Suppression<span class="ct">23</span></a><a class="nav-a" data-k="settings" href="#/settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2"></circle><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"></path></svg>Settings</a><a class="nav-a" data-k="audit" href="#/audit"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2.5h6l2.5 2.5v8.5H4z"></path><path d="M6 7h4.5M6 9.5h4.5"></path></svg>Audit log</a><div class="side-foot"><b>you@demo</b><label class="role-pick">Viewing as <select id="role" aria-label="Demo role"><option value="admin">Admin</option><option value="editor">Editor</option><option value="viewer">Viewer</option></select></label><div class="mt-2">v1.2.1 · stored in this browser</div></div></aside>
 <div class="main-wrap"><div class="topbar"><button class="btn btn-sm" type="button" id="nav-toggle" aria-controls="side" aria-expanded="false">Menu</button><span class="small sl">Demo · version 1.2</span></div>
 <main class="main" id="view" aria-live="polite"></main>
+<footer class="demo-foot"><a href="https://buymeacoffee.com/tanzir" target="_blank" rel="noopener"><span class="cup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5V9z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8.5 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="txt"><b>LiteHCP Targeter is free and open source.</b> Tanzir Rahman is Fueling open-source code, local utilities, and late-night builds.</span><span class="go">Buy me a coffee</span></a></footer>
 </div>
 </div>
 <script>window.LH_ICONS = {"suppression": "<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"5.5\"></circle><path d=\"M4.2 11.8l7.6-7.6\"></path></svg>"};</script>
