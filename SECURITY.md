@@ -41,7 +41,7 @@ Secrets are loaded from `.env` (not committed). To rotate:
 - Keep `litehcp_uploads/` access-denied (Apache uses `.htaccess`; for Nginx add an explicit deny rule).
 
 ## Verifying an install
-`php litehcp.php action=selftest` runs 33 checks against an in-memory database, including that no export in any format can contain a suppressed HCP, that builder values are quoted, that unknown fields and multi-statement filters are rejected, and that the role matrix holds.
+`php litehcp.php action=selftest` runs 43 checks against an in-memory database, including that no export in any format can contain a suppressed HCP, that builder values are quoted, that unknown fields and multi-statement filters are rejected, and that the role matrix holds.
 
 ## Production hardening checklist
 - **PHP**: run 8.3 or newer; versions below 8.2 no longer receive security fixes.

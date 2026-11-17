@@ -24,7 +24,7 @@ Run the self-test from SSH or a cPanel terminal. It uses an in-memory database a
 php /home/USER/public_html/litehcp.php action=selftest
 ```
 
-It prints one line per check and ends with `All 33 checks passed.` (exit code 0) or a list of failures (exit code 1).
+It prints one line per check and ends with `All 43 checks passed.` (exit code 0) or a list of failures (exit code 1).
 
 ## Upgrading from 1.1
 1. Back up `litehcp.db` (and `litehcp_uploads/` if you keep logs).

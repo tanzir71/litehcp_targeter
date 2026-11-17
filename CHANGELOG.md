@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 1.2.1 — 2026-11-17
+
+Fixes stale data after rule changes and partial re-imports. Replace `litehcp.php`; no database changes.
+
+**Fixed**
+- Re-running rules (after saving, reordering or deleting a rule, the Recalculate button, bulk consent changes and the cron job) now starts each HCP from a clean slate. Before, a persona, "cleared to contact" flag or tag that a rule no longer gave stayed on the HCP: editing the Do Not Contact rule kept those HCPs excluded, and audiences filtered by tag kept HCPs the rule no longer tagged.
+- "Re-run rules" on a single HCP now also clears a stale "cleared to contact" flag and tags.
+- Re-importing an HCP keeps every column the file doesn't have. Before, a partial file such as a consent or email update reset specialty, region, organization and role to their defaults, cleared the activity date, and set consent to No, which could turn the HCP into Do Not Contact.
+- A partial re-import no longer lowers data confidence; each HCP keeps the best column match of its imports.
+- Re-imported HCPs are scored on the merged record (engagement count, custom fields such as a KOL score, stored NPI), so their score, persona and tier match a full recalculation straight away, and their rule trace and tags are replaced instead of added to.
+- Rule test re-runs every rule with the draft in its place and shows what would actually change, including HCPs newly excluded or no longer excluded. Before, it applied the draft on top of each HCP's current result, so testing an edited rule double-counted its old effect.
+- Suppression page says "1 HCP" instead of "1 HCPs".
+
+**Upgrade**
+- After replacing the file, run Settings → Maintenance → *Recalculate all scores and rules* once (or the cron job) to clear anything left behind by earlier rule edits.
+- `php litehcp.php action=selftest` now runs 43 checks, including the cases above.
+
 ## 1.2.0 — 2026-11-17
 
 Rebuilt around how targeting teams work. Still one PHP file; upgrades in place.

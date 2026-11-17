@@ -14,7 +14,7 @@ Deploy (shared hosting / cPanel / Namecheap):
 
 declare(strict_types=1);
 
-const LITEHCP_VERSION = '1.2.0';
+const LITEHCP_VERSION = '1.2.1';
 
 if (PHP_VERSION_ID < 80000) {
     http_response_code(500);
@@ -1626,6 +1626,7 @@ function import_process_chunk(PDO $pdo, array $CONFIG, int $id, ?int $userId, fl
     $hitTimeLimit = false;
     $di = $CONFIG['defaultImputation'];
 
+    $findExisting = $pdo->prepare('SELECT * FROM profiles WHERE hcp_id = :h');
     $pdo->beginTransaction();
     $sinceCommit = 0;
     try {
@@ -1678,18 +1679,55 @@ function import_process_chunk(PDO $pdo, array $CONFIG, int $id, ?int $userId, fl
                 $custom[$cname] = is_numeric($cv) ? $cv + 0 : $cv;
             }
 
-            $meta = [
+            $rowMapConf = $mappingConfidence01;
+            $meta = [];
+            $existing = null;
+            if ($p['hcp_id'] !== '') {
+                $findExisting->execute([':h' => $p['hcp_id']]);
+                $existing = $findExisting->fetch() ?: null;
+            }
+            if ($existing) {
+                // Updating an HCP we already have: start from the stored record. Columns this file doesn't
+                // have keep their current values, so a partial file (a consent or email update, say) never
+                // resets specialty, consent or activity to defaults. The merged record is what gets scored.
+                $meta = json_decode_safe((string)($existing['metadata'] ?? '{}'));
+                $oldImputed = is_array($meta['imputed_fields'] ?? null) ? $meta['imputed_fields'] : [];
+                foreach (['email', 'specialty', 'region', 'organization', 'role', 'consent_email', 'consent_web', 'last_activity_ts', 'imports_count'] as $f) {
+                    if (($mapping[$f] ?? '') !== '') continue;
+                    $p[$f] = $existing[$f];
+                    unset($imputedFlags[$f]);
+                    if (!empty($oldImputed[$f])) $imputedFlags[$f] = true;
+                }
+                $p['consent_email'] = (int)$p['consent_email'];
+                $p['consent_web'] = (int)$p['consent_web'];
+                $p['last_activity_ts'] = to_int_or_null($p['last_activity_ts']);
+                $p['imports_count'] = max((int)$existing['imports_count'], (int)$p['imports_count']) + 1;
+                if ($p['npi'] === null) $p['npi'] = $existing['npi'] !== null && (string)$existing['npi'] !== '' ? (string)$existing['npi'] : null;
+                if ($npiNote === null && $npiRaw !== '') unset($meta['npi_invalid']);
+                $custom = array_merge(is_array($meta['custom'] ?? null) ? $meta['custom'] : [], $custom);
+                $p['created_at'] = (int)$existing['created_at'];
+                // How well this HCP's columns were matched: the best of its imports, so a narrow update file
+                // doesn't lower its data confidence. Records from before 1.2.1 didn't store it; derive it.
+                $oldMapConf = $meta['mapping_confidence'] ?? null;
+                if (!is_numeric($oldMapConf)) {
+                    $raw = compute_confidence($existing, $oldImputed, $CONFIG, 1.0);
+                    $oldMapConf = $raw > 0 ? (int)$existing['confidence_score'] / $raw : 1.0;
+                }
+                $rowMapConf = max($mappingConfidence01, min(1.0, (float)$oldMapConf));
+            }
+            $meta = array_merge($meta, [
                 'imputed_fields' => $imputedFlags,
                 'imputation_plan' => $impute,
                 'last_import_id' => $id,
+                'mapping_confidence' => round($rowMapConf, 4),
                 'tags' => [],
                 'applied_rules' => [],
                 'applied_rule_ids_csv' => ',',
                 'custom' => $custom,
-            ];
+            ]);
             if ($npiNote !== null) $meta['npi_invalid'] = $npiNote;
             $p['metadata'] = json_encode_safe($meta);
-            $p['confidence_score'] = compute_confidence($p, $imputedFlags, $CONFIG, $mappingConfidence01);
+            $p['confidence_score'] = compute_confidence($p, $imputedFlags, $CONFIG, $rowMapConf);
             $p['priority_score'] = compute_base_priority($p, $CONFIG);
             $p = enrich_profile($p, $rules, $CONFIG);
 
@@ -2263,10 +2301,14 @@ if(rb){
   }
   const tb=$('#r-test');
   if(tb)tb.addEventListener('click',async()=>{const box=$('#rule-test');box.innerHTML='<div class="muted small">Testing on every HCP…</div>';
-    try{const j=await post('?action=api_rule_test',{conditions_json:tc.value,actions_json:ta.value});
-      box.innerHTML='<div class="d-flex between items-center mb-2"><b>Test result</b><span class="chip blue">Matches '+fmt(j.matched)+' of '+fmt(j.total)+' HCPs</span></div>'+
-      (j.examples&&j.examples.length?'<div class="diff muted small"><span>HCP</span><span>Before</span><span></span><span>After</span></div>'+j.examples.map(x=>'<div class="diff"><span><b>'+esc(x.name)+'</b> <span class="muted mono">'+esc(x.hcp_id)+'</span></span><span class="sl">'+esc(x.before.persona||'No persona')+' · '+fmtScore(x.before.priority)+'</span><span class="muted">→</span><span><b>'+esc(x.after.persona||'No persona')+' · '+fmtScore(x.after.priority)+'</b></span></div>').join(''):'<div class="muted small">No HCP matches these conditions.</div>')+
-      '<div class="help mt-2">Tested in memory against the current data; nothing was saved.</div>';}
+    try{const rid=new URLSearchParams(location.search).get('id')||0,pos=$('#pos');
+      const j=await post('?action=api_rule_test',{conditions_json:tc.value,actions_json:ta.value,rule_id:rid,position:pos?pos.value:'last'});
+      const side=x=>esc(x.persona||'No persona')+' · '+fmtScore(x.priority)+' <span class="tier t'+x.tier+'">'+x.tier+'</span>'+(x.excluded?' <span class="chip red">Excluded</span>':'');
+      const pl=(n,a,b)=>fmt(n)+' '+(n===1?a:b);
+      box.innerHTML='<div class="d-flex between items-center mb-2 wrap gap-2"><b>'+(+rid?'If you save these changes':'If you save this rule')+'</b><span class="d-flex gap-2 wrap"><span class="chip blue">Matches '+fmt(j.matched)+' of '+fmt(j.total)+' HCPs</span><span class="chip">'+pl(j.changed,'HCP changes','HCPs change')+'</span>'+(j.now_excluded?'<span class="chip red">'+fmt(j.now_excluded)+' newly excluded</span>':'')+(j.released?'<span class="chip amber">'+fmt(j.released)+' no longer excluded</span>':'')+'</span></div>'+
+      (j.examples&&j.examples.length?'<div class="diff muted small"><span>HCP</span><span>Now</span><span></span><span>After saving</span></div>'+j.examples.map(x=>'<div class="diff"><span><b>'+esc(x.name)+'</b> <span class="muted mono">'+esc(x.hcp_id)+'</span></span><span class="sl">'+side(x.before)+'</span><span class="muted">→</span><span><b>'+side(x.after)+'</b></span></div>').join('')+(j.changed>j.examples.length?'<div class="help mt-1">and '+fmt(j.changed-j.examples.length)+' more.</div>':'')
+        :'<div class="muted small">'+(j.matched?'Every matching HCP already looks like this, so nothing would change.':'No HCP reaches this rule. Check the conditions, or rules earlier in the run order that stop first.')+'</div>')+
+      '<div class="help mt-2">All rules were re-run in order on a copy of your data, with this rule in its place. Nothing was saved.</div>';}
     catch(err){box.innerHTML='<div class="alert bad">'+esc(err.message)+'</div>';}});
 }
 
@@ -2593,7 +2635,7 @@ function apply_imputation(string $field, $rawValue, array $plan, array $stats, a
 }
 
 function upsert_profile(PDO $pdo, array $p): string {
-    $exists = $pdo->prepare('SELECT id, imports_count, metadata FROM profiles WHERE hcp_id = :h');
+    $exists = $pdo->prepare('SELECT id FROM profiles WHERE hcp_id = :h');
     $exists->execute([':h' => (string)$p['hcp_id']]);
     $row = $exists->fetch();
     if (!$row) {
@@ -2624,26 +2666,7 @@ function upsert_profile(PDO $pdo, array $p): string {
         return 'insert';
     }
 
-    $existingCount = (int)($row['imports_count'] ?? 0);
-    $existingMeta = json_decode_safe((string)($row['metadata'] ?? '{}'));
-    $newMeta = json_decode_safe((string)($p['metadata'] ?? '{}'));
-    $merged = $existingMeta;
-    $merged['tags'] = array_values(array_unique(array_merge($existingMeta['tags'] ?? [], $newMeta['tags'] ?? [])));
-    $merged['applied_rules'] = array_merge($existingMeta['applied_rules'] ?? [], $newMeta['applied_rules'] ?? []);
-    $merged['applied_rule_ids_csv'] = (string)($existingMeta['applied_rule_ids_csv'] ?? ',');
-    $csv = (string)($newMeta['applied_rule_ids_csv'] ?? ',');
-    foreach (explode(',', trim($csv, ',')) as $rid) {
-        $rid = trim($rid);
-        if ($rid === '') continue;
-        if (strpos($merged['applied_rule_ids_csv'], ',' . $rid . ',') === false) $merged['applied_rule_ids_csv'] .= $rid . ',';
-    }
-    $merged['imputed_fields'] = $newMeta['imputed_fields'] ?? ($existingMeta['imputed_fields'] ?? []);
-    $merged['last_import_id'] = $newMeta['last_import_id'] ?? ($existingMeta['last_import_id'] ?? null);
-    $merged['custom'] = array_merge(
-        is_array($existingMeta['custom'] ?? null) ? $existingMeta['custom'] : [],
-        is_array($newMeta['custom'] ?? null) ? $newMeta['custom'] : []
-    );
-
+    // The import loop has already merged this row with the stored HCP and scored the result.
     $stmt = $pdo->prepare('UPDATE profiles SET
         name=:name,
         npi=COALESCE(:npi, npi),
@@ -2673,11 +2696,11 @@ function upsert_profile(PDO $pdo, array $p): string {
         ':consent_email' => (int)$p['consent_email'],
         ':consent_web' => (int)$p['consent_web'],
         ':last_activity_ts' => to_int_or_null($p['last_activity_ts'] ?? null),
-        ':imports_count' => max($existingCount, (int)$p['imports_count']) + 1,
+        ':imports_count' => (int)$p['imports_count'],
         ':persona' => $p['persona'] !== null ? (string)$p['persona'] : null,
         ':priority_score' => (float)$p['priority_score'],
         ':compliance_flag' => (int)$p['compliance_flag'],
-        ':metadata' => json_encode_safe($merged),
+        ':metadata' => (string)$p['metadata'],
         ':confidence_score' => (int)$p['confidence_score'],
         ':hcp_id' => (string)$p['hcp_id'],
     ]);
@@ -2688,7 +2711,7 @@ function reset_rule_trace(array $meta): array {
     $meta['applied_rules'] = [];
     $meta['applied_rule_ids_csv'] = ',';
     $meta['last_enriched_ts'] = time();
-    if (!isset($meta['tags']) || !is_array($meta['tags'])) $meta['tags'] = [];
+    $meta['tags'] = []; // tags only ever come from rules, so they are rebuilt on every run
     if (!isset($meta['imputed_fields']) || !is_array($meta['imputed_fields'])) $meta['imputed_fields'] = [];
     return $meta;
 }
@@ -2736,6 +2759,17 @@ function sqlite_supports_json(PDO $pdo): bool {
     return $supported;
 }
 
+// Runs the enrichment rules on one stored HCP from a clean slate. Everything a rule set last time
+// (persona, cleared to contact, tags, the rule trace) is cleared first, so a rule that no longer
+// matches leaves nothing behind.
+function rerun_rules(array $p, array $rules, array $CONFIG): array {
+    $p['metadata'] = json_encode_safe(reset_rule_trace(json_decode_safe((string)($p['metadata'] ?? '{}'))));
+    $p['persona'] = null;
+    $p['compliance_flag'] = 0;
+    $p['priority_score'] = compute_base_priority($p, $CONFIG);
+    return enrich_profile($p, $rules, $CONFIG);
+}
+
 function cron_recompute_all(PDO $pdo, array $CONFIG): void {
     $rules = $pdo->query('SELECT * FROM rules ORDER BY priority DESC, id ASC')->fetchAll();
     $limit = 200;
@@ -2749,10 +2783,7 @@ function cron_recompute_all(PDO $pdo, array $CONFIG): void {
         if (!$rows) break;
         $pdo->beginTransaction();
         foreach ($rows as $p) {
-            $meta = reset_rule_trace(json_decode_safe((string)($p['metadata'] ?? '{}')));
-            $p['metadata'] = json_encode_safe($meta);
-            $p['priority_score'] = compute_base_priority($p, $CONFIG);
-            $p = enrich_profile($p, $rules, $CONFIG);
+            $p = rerun_rules($p, $rules, $CONFIG);
             $pdo->prepare('UPDATE profiles SET persona=:persona, priority_score=:ps, compliance_flag=:cf, metadata=:m WHERE id=:id')->execute([
                 ':persona' => $p['persona'] !== null ? (string)$p['persona'] : null,
                 ':ps' => (float)$p['priority_score'],
@@ -3622,11 +3653,7 @@ function handle_re_enrich(PDO $pdo, array $CONFIG): void {
     $p = $stmt->fetch();
     if (!$p) { flash('danger', 'That HCP no longer exists.'); redirect('?action=profiles'); }
     $rules = $pdo->query('SELECT * FROM rules ORDER BY priority DESC, id ASC')->fetchAll();
-    $meta = reset_rule_trace(json_decode_safe((string)($p['metadata'] ?? '{}')));
-    $p['metadata'] = json_encode_safe($meta);
-    $p['persona'] = null;
-    $p['priority_score'] = compute_base_priority($p, $CONFIG);
-    $p = enrich_profile($p, $rules, $CONFIG);
+    $p = rerun_rules($p, $rules, $CONFIG);
     $pdo->prepare('UPDATE profiles SET persona=:persona, priority_score=:ps, compliance_flag=:cf, metadata=:m WHERE id=:id')->execute([
         ':persona' => $p['persona'] !== null ? (string)$p['persona'] : null,
         ':ps' => (float)$p['priority_score'],
@@ -3845,7 +3872,7 @@ function page_rule_edit(PDO $pdo, array $CONFIG, array $settings): void {
     echo '<div class="field"><label class="lbl" for="a-tags">Add tags</label><input class="input" id="a-tags" placeholder="comma separated, e.g. oncology, email_ok"></div>';
     echo '<label class="check"><input type="checkbox" id="a-continue"> Keep running later rules after this one matches</label></div></div>';
     echo '</div>';
-    echo '<div class="card pad"><div class="d-flex between items-center"><div class="h">Test on your data</div><button class="btn btn-sm" type="button" id="r-test">Test on all HCPs</button></div><div id="rule-test" class="mt-2"><div class="help">Shows how many HCPs match and what would change. Nothing is saved.</div></div></div>';
+    echo '<div class="card pad"><div class="d-flex between items-center"><div class="h">Test on your data</div><button class="btn btn-sm" type="button" id="r-test">Test on all HCPs</button></div><div id="rule-test" class="mt-2"><div class="help">Re-runs every rule with this one in place and shows which HCPs would change. Nothing is saved.</div></div></div>';
     echo '<details class="card pad" id="json-details"><summary class="h" style="cursor:pointer">View as JSON</summary><div class="grid g2 mt-3"><div><label class="lbl" for="conditions_json">Conditions</label><textarea class="input" id="conditions_json" name="conditions_json" rows="14"' . ($readonly ? ' readonly' : '') . '>' . h($condJson) . '</textarea></div><div><label class="lbl" for="actions_json">Actions</label><textarea class="input" id="actions_json" name="actions_json" rows="14"' . ($readonly ? ' readonly' : '') . '>' . h($actJson) . '</textarea></div></div>';
     echo '<div class="field mt-3" style="max-width:200px"><label class="lbl" for="prio">Priority number (higher runs first)</label><input class="input" id="prio" type="number" name="priority" value="' . h($rule ? (string)$rule['priority'] : '') . '" placeholder="automatic"' . ($readonly ? ' disabled' : '') . '></div>';
     echo '<div class="help">Advanced: supports nested {"all": [...]} / {"any": [...]} groups and operators =, !=, &gt;, &lt;, &gt;=, &lt;=, in, contains, regex. Actions: set_persona, add_priority_delta, set_priority_score, set_compliance_flag, add_tags.</div></details>';
@@ -3875,24 +3902,44 @@ function api_rule_test(PDO $pdo, array $CONFIG): void {
     $act = json_decode((string)($body['actions_json'] ?? ''), true);
     if (!is_array($cond)) json_out(['error' => 'The conditions aren\'t valid JSON.'], 400);
     if (!is_array($act)) json_out(['error' => 'The actions aren\'t valid JSON.'], 400);
-    $total = 0;
-    $matched = 0;
-    $examples = [];
+    // Re-run the whole rule chain with the draft in its place, exactly as saving would, and compare
+    // with what is stored now. Testing an edited rule therefore shows its real effect, not the new
+    // actions stacked on top of the old ones.
+    $ruleId = (int)($body['rule_id'] ?? 0);
+    $rules = $pdo->query('SELECT * FROM rules ORDER BY priority DESC, id ASC')->fetchAll();
+    $draftId = $ruleId > 0 ? $ruleId : -1;
+    $priority = null;
+    foreach ($rules as $i => $r) if ((int)$r['id'] === $ruleId) { $priority = (int)$r['priority']; unset($rules[$i]); }
+    if ($priority === null) {
+        $prs = array_map(fn($r) => (int)$r['priority'], $rules);
+        $priority = $prs ? ((string)($body['position'] ?? 'last') === 'first' ? max($prs) + 10 : min($prs) - 10) : 100;
+    }
+    $rules[] = ['id' => $draftId, 'name' => 'test', 'priority' => $priority, 'conditions_json' => json_encode_safe($cond), 'actions_json' => json_encode_safe($act)];
+    usort($rules, fn($a, $b) => ((int)$b['priority'] <=> (int)$a['priority']) ?: ((int)$a['id'] <=> (int)$b['id']));
+    $cut = tier_cutoffs($CONFIG, get_settings($pdo));
+    $personas = (array)$CONFIG['suppressPersonas'];
+    $listed = array_flip(array_map('strval', $pdo->query('SELECT hcp_id FROM suppressions')->fetchAll(PDO::FETCH_COLUMN)));
+    $total = 0; $matched = 0; $changed = []; $nowExcluded = 0; $released = 0;
     $stmt = $pdo->query('SELECT * FROM profiles ORDER BY priority_score DESC, id ASC LIMIT 50000');
     while ($p = $stmt->fetch()) {
         $total++;
-        if (!eval_conditions($p, $cond)) continue;
-        $matched++;
-        if (count($examples) < 5) {
-            $after = apply_actions($p, $act, 0, 'test');
-            $examples[] = [
-                'hcp_id' => (string)$p['hcp_id'], 'name' => (string)$p['name'],
-                'before' => ['persona' => $p['persona'], 'priority' => (float)$p['priority_score']],
-                'after' => ['persona' => $after['persona'], 'priority' => max(0.0, min(100.0, (float)$after['priority_score']))],
-            ];
-        }
+        $w = rerun_rules($p, $rules, $CONFIG);
+        $trace = (string)(json_decode_safe((string)$w['metadata'])['applied_rule_ids_csv'] ?? ',');
+        if (strpos($trace, ',' . $draftId . ',') !== false) $matched++;
+        $exBefore = in_array((string)($p['persona'] ?? ''), $personas, true) || isset($listed[(string)$p['hcp_id']]);
+        $exAfter = in_array((string)($w['persona'] ?? ''), $personas, true) || isset($listed[(string)$p['hcp_id']]);
+        $delta = (float)$w['priority_score'] - (float)$p['priority_score'];
+        if ((string)($w['persona'] ?? '') === (string)($p['persona'] ?? '') && abs($delta) < 0.001 && $exBefore === $exAfter) continue;
+        if ($exAfter && !$exBefore) $nowExcluded++;
+        if (!$exAfter && $exBefore) $released++;
+        $changed[] = [
+            'hcp_id' => (string)$p['hcp_id'], 'name' => (string)$p['name'], 'd' => abs($delta),
+            'before' => ['persona' => $p['persona'], 'priority' => (float)$p['priority_score'], 'tier' => compute_tier((float)$p['priority_score'], $cut), 'excluded' => $exBefore],
+            'after' => ['persona' => $w['persona'], 'priority' => (float)$w['priority_score'], 'tier' => compute_tier((float)$w['priority_score'], $cut), 'excluded' => $exAfter],
+        ];
     }
-    json_out(['matched' => $matched, 'total' => $total, 'examples' => $examples]);
+    usort($changed, fn($a, $b) => $b['d'] <=> $a['d']);
+    json_out(['matched' => $matched, 'total' => $total, 'changed' => count($changed), 'now_excluded' => $nowExcluded, 'released' => $released, 'examples' => array_slice($changed, 0, 6)]);
 }
 
 
@@ -4391,7 +4438,7 @@ function page_suppression(PDO $pdo, array $CONFIG, array $settings): void {
     $listedInData = (int)$pdo->query('SELECT COUNT(*) FROM suppressions s JOIN profiles p ON p.hcp_id = s.hcp_id')->fetchColumn();
     page_top('Suppression', 'Excluded HCPs never appear in an audience count, preview or export, for any role. There is no override.');
 
-    echo '<div class="grid g3"><div class="card pad tile"><div class="v">' . h(fmt_int($total)) . '</div><div class="l">HCPs excluded right now</div></div>';
+    echo '<div class="grid g3"><div class="card pad tile"><div class="v">' . h(fmt_int($total)) . '</div><div class="l">' . ($total === 1 ? 'HCP' : 'HCPs') . ' excluded right now</div></div>';
     echo '<div class="card pad tile"><div class="v">' . h(fmt_int($byPersona)) . '</div><div class="l">with the ' . h(implode(' / ', $personas)) . ' persona (set by <a class="link" href="?action=rules">rules</a>)</div></div>';
     echo '<div class="card pad tile"><div class="v">' . h(fmt_int($listed)) . '</div><div class="l">on the suppression list' . ($listed !== $listedInData ? ' (' . h(fmt_int($listed - $listedInData)) . ' not imported yet)' : '') . '</div></div></div>';
 
@@ -4802,6 +4849,58 @@ function run_selftest(array $CONFIG): int {
         // Rule re-application keeps suppression in step.
         cron_recompute_all($pdo, $CONFIG);
         $check('recalculating all HCPs keeps 23 Do Not Contact', $count("SELECT COUNT(*) FROM profiles WHERE persona = 'Do Not Contact'") === 23);
+
+        // Re-running rules starts from a clean slate: a persona, "cleared to contact" or tag that a rule
+        // no longer gives must not linger after the rule changes.
+        $profileRow = function (string $hcp) use ($pdo): array {
+            $st = $pdo->prepare('SELECT * FROM profiles WHERE hcp_id = :h');
+            $st->execute([':h' => $hcp]);
+            $row = $st->fetch() ?: [];
+            $row['meta'] = json_decode_safe((string)($row['metadata'] ?? '{}'));
+            return $row;
+        };
+        $dncRule = $pdo->query("SELECT * FROM rules WHERE actions_json LIKE '%Do Not Contact%' ORDER BY id LIMIT 1")->fetch();
+        $oncRule = $pdo->query("SELECT * FROM rules WHERE actions_json LIKE '%Oncology Engaged%' ORDER BY id LIMIT 1")->fetch();
+        $setRule = fn(int $id, string $col, string $json) => $pdo->prepare('UPDATE rules SET ' . ($col === 'conditions' ? 'conditions_json' : 'actions_json') . ' = :j WHERE id = :id')->execute([':j' => $json, ':id' => $id]);
+        $setRule((int)$dncRule['id'], 'conditions', json_encode_safe(['match' => 'AND', 'conditions' => [['field' => 'hcp_id', 'op' => '=', 'value' => '__nobody__']]]));
+        $oncActions = json_decode_safe((string)$oncRule['actions_json']);
+        unset($oncActions['set_compliance_flag'], $oncActions['add_tags']);
+        $setRule((int)$oncRule['id'], 'actions', json_encode_safe($oncActions));
+        reapply_rules($pdo, $CONFIG, 0);
+        $leftDnc = $count("SELECT COUNT(*) FROM profiles WHERE persona = 'Do Not Contact'");
+        $check('editing the Do Not Contact rule clears that persona from HCPs it no longer matches', $leftDnc === 0, $leftDnc . ' still have it');
+        $leftCf = $count("SELECT COUNT(*) FROM profiles WHERE persona = 'Oncology Engaged' AND compliance_flag = 1");
+        $check('removing "cleared to contact" from a rule clears it on every HCP', $leftCf === 0, $leftCf . ' still cleared');
+        $leftTags = 0;
+        foreach ($pdo->query("SELECT metadata FROM profiles WHERE persona = 'Oncology Engaged'")->fetchAll() as $row) if (in_array('oncology', (array)(json_decode_safe((string)$row['metadata'])['tags'] ?? []), true)) $leftTags++;
+        $check('removing a tag from a rule clears it on every HCP', $leftTags === 0, $leftTags . ' still tagged');
+        $setRule((int)$dncRule['id'], 'conditions', (string)$dncRule['conditions_json']);
+        $setRule((int)$oncRule['id'], 'actions', (string)$oncRule['actions_json']);
+        reapply_rules($pdo, $CONFIG, 0);
+        $check('restoring the rules brings back exactly 23 Do Not Contact', $count("SELECT COUNT(*) FROM profiles WHERE persona = 'Do Not Contact'") === 23);
+
+        // Re-importing part of a record (here, a consent update) keeps every column the file doesn't have,
+        // and the HCP is scored on the merged record, exactly as a full recalculation would score it.
+        $before = $profileRow('HCP-1022');
+        $impId = create_auto_import($pdo, $CONFIG, 'consent_update.csv', "hcp_id,name,consent_email,consent_web\nHCP-1022," . $before['name'] . ",no,no\n");
+        import_process_chunk($pdo, $CONFIG, $impId, null, 20.0);
+        $after = $profileRow('HCP-1022');
+        $kept = $after['specialty'] === $before['specialty'] && $after['region'] === $before['region'] && $after['organization'] === $before['organization']
+            && $after['role'] === $before['role'] && (string)$after['email'] === (string)$before['email'] && (int)$after['last_activity_ts'] === (int)$before['last_activity_ts']
+            && ($after['meta']['custom']['kol_score'] ?? null) === ($before['meta']['custom']['kol_score'] ?? null);
+        $check('a partial re-import keeps the columns the file does not have', $kept, $after['specialty'] . ', ' . $after['region'] . ', activity ' . var_export($after['last_activity_ts'], true));
+        $check('a partial re-import does not lower data confidence', (int)$after['confidence_score'] === (int)$before['confidence_score'], $before['confidence_score'] . ' → ' . $after['confidence_score']);
+        $check('withdrawn consent makes the re-imported HCP Do Not Contact', $after['persona'] === 'Do Not Contact' && (int)$after['compliance_flag'] === 0 && (int)$after['imports_count'] === (int)$before['imports_count'] + 1);
+        $staleTrace = in_array('oncology', (array)($after['meta']['tags'] ?? []), true) || strpos((string)($after['meta']['applied_rule_ids_csv'] ?? ''), ',' . (int)$oncRule['id'] . ',') !== false;
+        $check('a re-import replaces the rule trace and tags instead of adding to them', !$staleTrace, implode(',', (array)($after['meta']['tags'] ?? [])) . ' / ' . (string)($after['meta']['applied_rule_ids_csv'] ?? ''));
+        $b1 = $profileRow('HCP-1001');
+        $impId2 = create_auto_import($pdo, $CONFIG, 'email_update.csv', "hcp_id,name,email\nHCP-1001," . $b1['name'] . "," . $b1['email'] . "\n");
+        import_process_chunk($pdo, $CONFIG, $impId2, null, 20.0);
+        $a1 = $profileRow('HCP-1001');
+        cron_recompute_all($pdo, $CONFIG);
+        $c1 = $profileRow('HCP-1001');
+        $check('a re-imported HCP already matches a full recalculation', abs((float)$c1['priority_score'] - (float)$a1['priority_score']) < 0.001 && $c1['persona'] === $a1['persona'] && $c1['meta']['tags'] === $a1['meta']['tags'] && $c1['tier'] === $a1['tier'], $a1['priority_score'] . ' after import, ' . $c1['priority_score'] . ' after recalculation');
+        $check('a re-import that only touches email keeps the score (KOL boost, activity, engagement)', (float)$a1['priority_score'] >= (float)$b1['priority_score'], $b1['priority_score'] . ' → ' . $a1['priority_score']);
     } catch (Throwable $e) {
         $check('self-test ran without errors', false, $e->getMessage() . ' at line ' . $e->getLine());
     }
