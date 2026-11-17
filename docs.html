@@ -89,14 +89,17 @@
         <aside class="toc">
             <div class="t">On this page</div>
             <a href="#deploy">Deploy</a>
+            <a href="#upgrade">Upgrade from 1.1</a>
             <a href="#local">Run locally</a>
             <a href="#config">Configuration</a>
             <a href="#import">CSV import</a>
             <a href="#imputation">Imputation</a>
             <a href="#scoring">Scoring</a>
             <a href="#rules">Rules reference</a>
-            <a href="#segments">Segments</a>
-            <a href="#simulator">Simulator</a>
+            <a href="#segments">Audiences</a>
+            <a href="#simulator">Planner</a>
+            <a href="#suppression">Suppression</a>
+            <a href="#roles">Roles</a>
             <a href="#export">Exports & privacy</a>
             <a href="#cron">Cron</a>
             <a href="#security">Security</a>
@@ -105,15 +108,15 @@
         <main>
             <span class="eyebrow">Documentation</span>
             <h1>Operate LiteHCP Targeter</h1>
-            <p class="lead">Everything from first upload to production operation. The app is one PHP file; this page is the rest of the manual.</p>
+            <p class="lead">Everything from first upload to production operation, for version 1.2. The app is one PHP file; this page is the rest of the manual.</p>
 
             <section id="deploy" class="doc">
                 <h2><span class="idx">DOC · 01</span>Deploy on shared hosting (cPanel / Namecheap)</h2>
-                <p>Requirements: <b>PHP 8.0+</b> with PDO + SQLite (default on nearly every host), and write permission in the app directory.</p>
+                <p>Requirements: <b>PHP 8.0+</b> (8.3 or newer recommended) with PDO + SQLite (default on nearly every host), and write permission in the app directory.</p>
                 <pre><span class="c"># 1. upload the single file</span>
 public_html/litehcp.php
 
-<span class="c"># 2. cPanel → MultiPHP Manager → set directory to PHP 8+</span>
+<span class="c"># 2. cPanel → MultiPHP Manager → set directory to PHP 8.3+ (8.0 minimum)</span>
 
 <span class="c"># 3. permissions</span>
 litehcp.php        0644
@@ -122,9 +125,30 @@ litehcp_uploads/   0750   <span class="c"># created automatically; 0755 if your 
 
 <span class="c"># 4. enforce HTTPS (hosting panel or redirect rule)</span>
 
-<span class="c"># 5. visit /litehcp.php → register → first user becomes admin</span></pre>
+<span class="c"># 5. visit /litehcp.php → register → first user becomes admin</span>
+
+<span class="c"># 6. optional: check the install</span>
+php litehcp.php action=selftest   <span class="c"># 33 checks, throwaway database</span></pre>
                 <p>On first load the app auto-creates its SQLite schema at <code>./litehcp.db</code> and the <code>litehcp_uploads/</code> directory (with web access denied via <code>.htaccess</code>).</p>
-                <p class="note"><b>See it working immediately:</b> Dashboard → <b>Load sample</b> imports the embedded demo dataset — 200 realistic HCP profiles with believable data gaps, 8 enrichment rules, and 5 segments. Same data as the <a href="./demo.html" style="border-bottom:1px solid var(--acc)">browser demo</a>.</p>
+                <p class="note"><b>See it working immediately:</b> Overview → <b>Load sample data</b> loads the embedded demo dataset in one click — 200 realistic HCP profiles with believable data gaps, 9 enrichment rules, and 6 audiences. Same data as the <a href="./demo.html" style="border-bottom:1px solid var(--acc)">browser demo</a>.</p>
+            </section>
+
+            <section id="upgrade" class="doc">
+                <h2><span class="idx">DOC · 01b</span>Upgrade from 1.1</h2>
+                <pre><span class="c"># 1. back up</span>
+cp litehcp.db litehcp.db.bak
+
+<span class="c"># 2. replace litehcp.php, then open the app once</span>
+<span class="c">#    schema migrates itself (PRAGMA user_version 0 → 2)</span>
+
+<span class="c"># 3. check</span>
+php litehcp.php action=selftest</pre>
+                <ul>
+                    <li>New columns (<code>npi</code>, <code>tier</code>, <code>priority_decile</code>), the <code>suppressions</code> table and export history columns are added; existing HCPs get tiers and deciles on first load.</li>
+                    <li>Users with the old <code>user</code> role become <b>editors</b>.</li>
+                    <li>Audiences saved as filters (<code>sql_filter</code>) keep working and are re-validated on every use; rule-based audiences open in the new builder.</li>
+                </ul>
+                <p class="note"><b>Behavior change:</b> exports now always leave out HCPs with the <i>Do Not Contact</i> persona or on the suppression list. The 1.1 sample segment "Suppression list (Do Not Contact)" therefore exports no rows; use the Suppression page to review those HCPs.</p>
             </section>
 
             <section id="local" class="doc">
@@ -149,10 +173,15 @@ UPLOAD_MAX_BYTES=<span class="a">"5242880"</span></pre>
                     <tbody>
                         <tr><td class="mono">priorityWeights</td><td class="mono">0.30 / 0.40 / 0.30</td><td>Consent / recency / engagement weights for the base priority score.</td></tr>
                         <tr><td class="mono">recencyWindowDays</td><td class="mono">90</td><td>Activity older than this contributes zero recency.</td></tr>
-                        <tr><td class="mono">confidenceStrictThreshold</td><td class="mono">70</td><td>Minimum confidence for strict-mode segments (also editable in Settings).</td></tr>
+                        <tr><td class="mono">confidenceStrictThreshold</td><td class="mono">70</td><td>Minimum confidence for strict-mode filter audiences saved in 1.1 (also editable in Settings). Builder audiences use a Data confidence condition instead.</td></tr>
                         <tr><td class="mono">confidence*Penalty</td><td class="mono">10 / 3 / 6</td><td>Confidence deductions for missing required, missing optional, and imputed fields.</td></tr>
-                        <tr><td class="mono">importCommitEvery</td><td class="mono">200</td><td>Rows per import chunk/transaction.</td></tr>
-                        <tr><td class="mono">defaultExportFieldsMinimal</td><td class="mono">6 fields, no PII</td><td>What a standard export contains.</td></tr>
+                        <tr><td class="mono">importCommitEvery</td><td class="mono">200</td><td>Rows per import transaction.</td></tr>
+                        <tr><td class="mono">importSecondsPerChunk</td><td class="mono">8</td><td>Time budget per background import request, kept under shared-hosting limits.</td></tr>
+                        <tr><td class="mono">tierCutoffs</td><td class="mono">A 80 / B 50</td><td>Priority score needed for tier A and B (editable in Settings).</td></tr>
+                        <tr><td class="mono">plannedCallsPerTier</td><td class="mono">6 / 3 / 1</td><td>Planned calls per cycle for tiers A / B / C (editable in Settings).</td></tr>
+                        <tr><td class="mono">suppressPersonas</td><td class="mono">Do Not Contact</td><td>Personas that exclude an HCP everywhere.</td></tr>
+                        <tr><td class="mono">defaultNewUserRole</td><td class="mono">viewer</td><td>Role for self-registered accounts when registration is open.</td></tr>
+                        <tr><td class="mono">exportPresets</td><td class="mono">minimal / crm_targets / email_platform</td><td>Export formats and their fields. Minimal has 6 fields and no PII.</td></tr>
                         <tr><td class="mono">rateLimit</td><td class="mono">login / register / export</td><td>Window, attempt, and block settings per action.</td></tr>
                     </tbody>
                 </table>
@@ -160,17 +189,19 @@ UPLOAD_MAX_BYTES=<span class="a">"5242880"</span></pre>
 
             <section id="import" class="doc">
                 <h2><span class="idx">DOC · 04</span>CSV import</h2>
-                <p>Import is a three-step flow: <b>upload → map → run</b>.</p>
+                <p>Import is a four-step flow: <b>upload → match columns → check data → import</b>. Nothing is written to the database until you start the last step.</p>
                 <ul>
                     <li><b>Upload</b> — CSV only, validated by extension, MIME type, and size (<code>UPLOAD_MAX_BYTES</code>). Filenames are sanitized and files stored in <code>litehcp_uploads/</code>.</li>
-                    <li><b>Map</b> — match your CSV columns to internal fields. Internal fields: <code>hcp_id, name, email, specialty, region, organization, role, consent_email, consent_web, last_activity_ts, imports_count</code>. A mapping-confidence figure feeds the profile confidence score.</li>
-                    <li><b>Run</b> — processes in chunks (200 rows by default) with a progress bar and a "run until done" auto-reload mode. Profiles <b>upsert by <code>hcp_id</code></b>, so re-imports are safe.</li>
+                    <li><b>Match columns</b> — columns are matched to internal fields automatically, first by exact name, then by common synonyms (for example <i>NPI</i>, <i>Customer ID</i> → HCP ID, <i>First name</i> + <i>Last name</i> → full name, <i>Email opt-in</i> → email consent, <i>Last seen</i> → last activity). Each column shows an example value and how it will be read; change any match, skip a column, or keep it as a custom field. Internal fields: <code>hcp_id, npi, name, email, specialty, region, organization, role, consent_email, consent_web, last_activity_ts, imports_count</code>. A mapping-confidence figure feeds the profile confidence score.</li>
+                    <li><b>Check data</b> — every row is scanned: missing HCP ID or name (skipped), duplicate IDs (later row wins), NPIs that fail the Luhn check digit (kept without NPI), unreadable dates and unrecognized consent values, with row examples and counts of new versus updated HCPs.</li>
+                    <li><b>Import</b> — runs in the background in short chunks with a progress bar (a button continues it without JavaScript). Profiles <b>upsert by <code>hcp_id</code></b>, so re-imports are safe; a known NPI is kept when a later file has none.</li>
                 </ul>
+                <p>Values are read flexibly: dates as <code>2026-09-14</code>, <code>09/14/2026</code>, <code>14.09.2026</code> or Unix seconds/milliseconds; consent as 1/0, yes/no, true/false, opt-in/opt-out or granted/withdrawn.</p>
             </section>
 
             <section id="imputation" class="doc">
                 <h2><span class="idx">DOC · 05</span>Imputation</h2>
-                <p>Each internal field gets an imputation strategy applied to blank values during import:</p>
+                <p>Each matched field that has blank values in the file gets an imputation strategy, chosen on the Match columns step:</p>
                 <table>
                     <thead><tr><th>Strategy</th><th>Behavior</th></tr></thead>
                     <tbody>
@@ -191,12 +222,15 @@ UPLOAD_MAX_BYTES=<span class="a">"5242880"</span></pre>
                  + 0.30 × engagement01 ) <span class="c"># imports_count / 10, capped at 1</span></pre>
                 <p>Rules may then adjust it (<code>add_priority_delta</code>) or set it outright (<code>set_priority_score</code>). The final value is clamped to 0–100.</p>
                 <h3>Confidence score (0–100)</h3>
-                <p>Starts at 100 and is reduced by missing required fields, missing optional fields, imputed fields, and incomplete column mapping. Strict-mode segments and exports can require a minimum confidence.</p>
+                <p>Starts at 100 and is reduced by missing required fields, missing optional fields, imputed fields, and incomplete column mapping. Audiences can require a minimum with a Data confidence condition.</p>
+                <h3>Tiers and deciles</h3>
+                <p>After scoring, every HCP gets a <b>tier</b> (A from 80, B from 50, otherwise C; cut-offs editable in Settings) and a <b>priority decile</b> from 1 to 10 across the whole database (10 = top 10%). Tiers drive planned calls per cycle in CRM exports. Both refresh after imports, rule changes, Settings changes and cron.</p>
+                <p>Each HCP's page explains its score: the consent, recency and engagement points, then each matching rule's change in run order, and the resulting tier.</p>
             </section>
 
             <section id="rules" class="doc">
                 <h2><span class="idx">DOC · 07</span>Rules reference</h2>
-                <p>Rules are JSON, evaluated against every profile in <b>priority order</b> (highest first). A rule is a condition tree plus actions:</p>
+                <p>Rules are built in a When/Then editor (conditions, then actions) and stored as JSON, evaluated against every profile in <b>run order</b> (top of the list first; move rules up or down on the Rules page). The JSON view supports everything the editor does plus nested groups. A rule is a condition tree plus actions:</p>
                 <pre>{
   <span class="a">"match"</span>: "AND",                     <span class="c">// or "OR"; nested "all"/"any" arrays also supported</span>
   <span class="a">"conditions"</span>: [
@@ -213,31 +247,73 @@ UPLOAD_MAX_BYTES=<span class="a">"5242880"</span></pre>
                     </tr></tbody>
                 </table>
                 <p>The special field <code>tags</code> matches against tags added by earlier (higher-priority) rules, so rules can chain. Every matched rule is recorded in the profile's metadata trace — segments can target "profiles where rule X fired".</p>
-                <p class="note"><b>Test before saving:</b> the rule editor includes a tester that evaluates a draft rule against up to 50 live profiles and shows exactly which match and why.</p>
+                <p class="note"><b>Test before saving:</b> the rule editor evaluates a draft rule against every HCP and shows how many match, with before/after persona and priority for examples. Saving re-applies all rules automatically (up to 20,000 HCPs; larger databases use Re-apply or cron).</p>
             </section>
 
             <section id="segments" class="doc">
-                <h2><span class="idx">DOC · 08</span>Segments</h2>
-                <p>A segment is either a <b>safe SQL-like filter</b> or a set of <b>rule IDs</b> (profiles where those rules fired). Filters are strictly validated: field names must be on the allowlist, and semicolons, comments, double quotes, and DDL/DML keywords are rejected.</p>
-                <pre><span class="c">-- examples (all from the embedded sample)</span>
+                <h2><span class="idx">DOC · 08</span>Audiences</h2>
+                <p>An audience is a list of conditions joined by <b>all</b> or <b>any</b>, built by pointing and clicking. The count updates after every condition, and a funnel shows all HCPs → matching → always excluded → ready to use, with the tier mix and the ten highest-priority HCPs.</p>
+                <table>
+                    <thead><tr><th>Condition</th><th>Options</th></tr></thead>
+                    <tbody>
+                        <tr><td>Specialty, region, role, organization, persona, tier</td><td>is any of / is none of</td></tr>
+                        <tr><td>Reachable by</td><td>any of / all of: email, web (from consent)</td></tr>
+                        <tr><td>Priority score, priority decile, data confidence, engagement count</td><td>at least / at most / exactly</td></tr>
+                        <tr><td>Last activity</td><td>within / not within the last N days</td></tr>
+                        <tr><td>Tag, enrichment rule</td><td>has / lacks tag; rule was / was not applied</td></tr>
+                        <tr><td>Custom fields (from imports)</td><td>number or text comparisons</td></tr>
+                    </tbody>
+                </table>
+                <p>Definitions are validated against this allowlist and every value is quoted or cast before it reaches SQL, so no user-written SQL runs. <b>Suppression is always applied</b> on top (see below).</p>
+                <p>Audiences saved as filters in 1.1 keep working. Their filters are still strictly validated (allowlisted fields; semicolons, comments, double quotes and DDL/DML keywords rejected) and still honor the strict/inclusive confidence modes:</p>
+                <pre><span class="c">-- 1.1 filter examples</span>
 specialty = 'oncology' AND confidence_score >= 70
 consent_email = 1 AND region = 'West'
-imports_count >= 5
-persona = 'Do Not Contact'</pre>
-                <p>Two run modes: <b>strict</b> additionally requires <code>confidence_score ≥ threshold</code> (default 70); <b>inclusive</b> returns all matches. Preview member counts and rows before exporting.</p>
+imports_count >= 5</pre>
             </section>
 
             <section id="simulator" class="doc">
-                <h2><span class="idx">DOC · 09</span>Campaign simulator</h2>
-                <p>Pick a segment, set assumptions — contact rate, response rate, cost per contact, value per response — and get projected contacts, responses, cost, value, and ROI. Every run is stored in the audit log with its assumptions, so the numbers behind a plan stay traceable.</p>
+                <h2><span class="idx">DOC · 09</span>Campaign planner</h2>
+                <p>Every saved audience has a plan panel: set contact rate, response rate, cost per contact and value per response, and see projected contacts, responses, cost, value and ROI update as you type, alongside planned calls per cycle by tier. Saved plans are stored with the audience and in the audit log with their assumptions, so the numbers behind a plan stay traceable. (The 1.1 simulator link opens this panel.)</p>
+            </section>
+
+            <section id="suppression" class="doc">
+                <h2><span class="idx">DOC · 09b</span>Suppression</h2>
+                <p>An HCP is <b>excluded</b> when it is on the suppression list or an enrichment rule gives it a suppression persona (<code>Do Not Contact</code> by default). Exclusion is part of every audience count, preview and export query. It cannot be switched off for an audience, a format or a role.</p>
+                <ul>
+                    <li>Admins add HCP IDs on the Suppression page (paste a column from a spreadsheet) with a reason: opted out, AMA PDRP restriction, deceased or retired, legal or compliance hold, or other.</li>
+                    <li>IDs that aren't imported yet are kept, so those HCPs are excluded the moment they arrive.</li>
+                    <li>Each HCP page says why it is excluded; additions and removals are audited.</li>
+                </ul>
+            </section>
+
+            <section id="roles" class="doc">
+                <h2><span class="idx">DOC · 09c</span>Roles</h2>
+                <table>
+                    <thead><tr><th>Role</th><th>Can</th></tr></thead>
+                    <tbody>
+                        <tr><td><b>Viewer</b></td><td>See the Overview, HCPs (emails hidden), audiences, rules, imports and exports history.</td></tr>
+                        <tr><td><b>Editor</b></td><td>Everything a viewer can, plus import, build rules and audiences, save plans, export minimal and CRM formats, read the audit log.</td></tr>
+                        <tr><td><b>Admin</b></td><td>Everything, plus suppression, settings, people and roles, deleting rules and audiences, and email platform exports when PII export is on.</td></tr>
+                    </tbody>
+                </table>
+                <p>The first account is an admin. Registration is closed by default; admins add people in Settings. Role changes apply on the next page load.</p>
             </section>
 
             <section id="export" class="doc">
                 <h2><span class="idx">DOC · 10</span>Exports & privacy</h2>
+                <table>
+                    <thead><tr><th>Format</th><th>Fields</th><th>Who</th></tr></thead>
+                    <tbody>
+                        <tr><td>Minimal CSV</td><td class="mono">hcp_id, specialty, region, persona, priority_score, confidence_score</td><td>Editors and admins</td></tr>
+                        <tr><td>CRM target list</td><td class="mono">hcp_id, npi, tier, planned_calls, specialty, region, persona, priority_score</td><td>Editors and admins</td></tr>
+                        <tr><td>Email platform</td><td class="mono">hcp_id, name, email, specialty, persona, tier</td><td>Admins, with <code>export_pii</code> on; only HCPs with email consent and an address</td></tr>
+                    </tbody>
+                </table>
                 <ul>
-                    <li>Default export fields: <code>hcp_id, specialty, region, persona, priority_score, confidence_score</code> — <b>no email, no name</b>.</li>
-                    <li>PII export (email/name) requires an admin to enable <code>export_pii</code> in Settings, and each PII export is individually audited.</li>
-                    <li>Field selection is enforced against <code>allowedExportFields</code> server-side.</li>
+                    <li>The default format has <b>no email, no name</b>. Suppressed HCPs are never written to any file.</li>
+                    <li>Field selection is enforced against <code>allowedExportFields</code> server-side; text cells that could run as spreadsheet formulas are neutralized.</li>
+                    <li>Every export is audited with its format, row count and excluded count, and listed on the Exports page. Files are generated on demand and not stored on the server.</li>
                     <li>Exports are rate-limited.</li>
                 </ul>
             </section>
@@ -250,19 +326,21 @@ php /home/USER/public_html/litehcp.php action=cron_recompute token=YOUR_CRON_TOK
 
 <span class="c"># or via HTTP</span>
 https://your-site.com/litehcp.php?action=cron_recompute&amp;token=YOUR_CRON_TOKEN</pre>
-                <p>Set the token via <code>.env</code> (<code>CRON_TOKEN</code>) and rotate it if it leaks. Processing is batched (200 profiles per transaction).</p>
+                <p>Set the token via <code>.env</code> (<code>CRON_TOKEN</code>) and rotate it if it leaks; the default <code>CHANGE_ME</code> is refused. Processing is batched (200 profiles per transaction), and tiers and deciles are refreshed at the end. Settings shows the exact command for your server.</p>
             </section>
 
             <section id="security" class="doc">
                 <h2><span class="idx">DOC · 12</span>Security model</h2>
                 <ul>
-                    <li><b>Auth</b> — password hashing via <code>password_hash</code>, session regeneration on login, idle timeout, first user becomes admin, registration closed by default afterward.</li>
-                    <li><b>CSRF</b> — token required on every POST.</li>
-                    <li><b>Headers</b> — CSP (nonce-based scripts, no third-party origins beyond fonts), X-Frame-Options DENY, nosniff, referrer policy, permissions policy.</li>
-                    <li><b>SQL</b> — prepared statements everywhere; segment filters validated against a field allowlist with keyword denylist.</li>
+                    <li><b>Auth</b> — password hashing via <code>password_hash</code>, session regeneration on login, idle timeout, first user becomes admin, registration closed by default afterward. Roles (viewer, editor, admin) are checked server-side and re-read from the database on every request.</li>
+                    <li><b>CSRF</b> — token required on every POST; the JSON endpoints used by the builders accept it in an <code>X-CSRF-Token</code> header.</li>
+                    <li><b>Headers</b> — CSP (nonce-based script, no third-party origins at all), X-Frame-Options DENY, nosniff, referrer policy, permissions policy.</li>
+                    <li><b>SQL</b> — prepared statements everywhere; audience builder values quoted against a field/operator allowlist; 1.1 filters validated against a field allowlist with keyword denylist.</li>
+                    <li><b>Suppression</b> — applied inside every count, preview and export query, with no override.</li>
                     <li><b>Uploads</b> — CSV-only validation by extension/MIME/size, sanitized filenames, uploads directory denied to the web.</li>
                     <li><b>Rate limiting</b> — login, registration, and export endpoints.</li>
                     <li><b>Errors</b> — logged server-side; no stack traces to the browser.</li>
+                    <li><b>Self-test</b> — <code>php litehcp.php action=selftest</code> verifies suppression, export formats, builder quoting and the role matrix on a throwaway database.</li>
                 </ul>
                 <p>Hardening checklist for production: enforce HTTPS, use a strong admin password, consider an <code>.htaccess</code> IP allowlist or basic auth in front, and make sure <code>litehcp.db</code> is not world-readable. Full details in <a href="https://github.com/tanzir71/litehcp_targeter/blob/main/SECURITY.md" style="border-bottom:1px solid var(--acc)">SECURITY.md</a>.</p>
             </section>
