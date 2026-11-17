@@ -16,7 +16,7 @@ Key facts:
 ## Docs
 
 - [Landing page](https://tanzir71.github.io/litehcp_targeter/): overview, features, setup paths, FAQ
-- [What's new in 1.2](https://tanzir71.github.io/litehcp_targeter/landing-v2.html#new): changes from 1.1 and upgrade notes
+- [What's new in 1.2](https://tanzir71.github.io/litehcp_targeter/#new): changes from 1.1 and upgrade notes
 - [Documentation](https://tanzir71.github.io/litehcp_targeter/docs.html): deploy, configuration, rules JSON reference, segments, exports, security
 - [Comparison](https://tanzir71.github.io/litehcp_targeter/compare.html): vs. Veeva CRM, Salesforce Life Sciences Cloud, IQVIA OCE
 - [Live demo](https://tanzir71.github.io/litehcp_targeter/demo.html): in-browser simulation with the full sample dataset

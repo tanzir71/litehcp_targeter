@@ -75,8 +75,7 @@ One intentional change: exports now leave out *Do Not Contact* HCPs, so the 1.1 
 
 ```
 litehcp.php       # the entire application
-index.html        # landing page (GitHub Pages)
-landing-v2.html   # redesigned landing page (explains 1.2)
+index.html        # landing page (GitHub Pages), incl. What's new in 1.2
 docs.html         # documentation
 compare.html      # comparison vs. enterprise HCP platforms
 demo.html         # client-side interactive demo

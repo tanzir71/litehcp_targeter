@@ -38,6 +38,9 @@ Rebuilt around how targeting teams work. Still one PHP file; upgrades in place.
 - `php litehcp.php action=selftest` runs 33 checks against an in-memory database and a temporary upload folder.
 - Cron refuses the default `CHANGE_ME` token.
 
+**Site**
+- New landing page (`index.html`) with a "What's new in 1.2" section and upgrade notes; docs, README, SETUP, SECURITY and llms.txt updated (sample counts now 9 rules / 6 audiences).
+
 **Security & platform**
 - No third-party assets: system font stack, CSP `font-src 'self'` and `style-src 'self' 'unsafe-inline'`.
 - API endpoints (`api_count`, `api_rule_test`, `api_import_chunk`) are POST-only with an `X-CSRF-Token` header.
